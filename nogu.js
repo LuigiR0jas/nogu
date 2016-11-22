@@ -273,3 +273,22 @@ bot.on('message', function (msg) {
         }
     }
 });
+
+//Dollar stuff
+bot.on('message', function (msg) {
+    if (msg.entities) {
+        if (msg.entities[0].type == 'bot_command' && msg.text.startsWith('\/dolar')) {
+            request('https://twitter.com/DolarToday', function (error, response, html) {
+                if (!error && response.statusCode == 200) {
+                    var loadedHTML = cheerio.load(html);
+                    var contentContainer = loadedHTML('p.ProfileHeaderCard-bio').text();
+                    var soughtContent = contentContainer.substring(contentContainer.search("Bs."), contentContainer.search(" y el"));
+                    bot.sendMessage(msg.chat.id, soughtContent);
+                    console.log('Sent dollar value');
+                } else {
+                    console.log(error);
+                }
+            });
+        }
+    }
+});
