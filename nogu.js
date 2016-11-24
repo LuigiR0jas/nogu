@@ -1,32 +1,32 @@
 'use strict';
 
 // Bot modules
-var token = process.env.TOKEN;
-var Tgfancy = require('tgfancy');
+const token = process.env.TOKEN;
+const Tgfancy = require('tgfancy');
 const bot = new Tgfancy(token, { polling: true });
 
 // HTTP modules
-var request = require('request');
-var cheerio = require('cheerio');
-var fs = require('fs');
-var translate = require('node-google-translate-skidz');
+const request = require('request');
+const cheerio = require('cheerio');
+const fs = require('fs');
+const translate = require('node-google-translate-skidz');
 
 // DB modules
-var uri = 'mongodb://localhost/telegram';
-var mongoose = require('mongoose');
+const uri = 'mongodb://localhost/telegram';
+const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 mongoose.connect(uri);
 
 // Mongoose sticker adder requirements
-var stickerSchema = mongoose.Schema({
+const stickerSchema = mongoose.Schema({
     stickerKeyword: String,
     stickerId: String,
     userId: Number,
     userName: String
 });
-var Schema = mongoose.Schema;
+const Schema = mongoose.Schema;
 
-var Sticker = mongoose.model('Sticker', stickerSchema);
+const Sticker = mongoose.model('Sticker', stickerSchema);
 
 // Sticker adder on query
 bot.on('message', function (msg) {
@@ -241,7 +241,7 @@ bot.on('message', function (msg){
     console.log('FN: ' + msg.from.first_name + " " + "UN: @" + msg.from.username + ': ' + msg.text);
 });
 
-/*------------------------  G O O G L E   T R A N S L A T E ----------------------*/
+// --------------GOOGLE TRANSLATE----------------
 
 bot.on('message', function(msg) {
     if (msg.entities) {
@@ -274,17 +274,23 @@ bot.on('message', function (msg) {
     }
 });
 
-//Dollar stuff
+//Dollar & Euro stuff
 bot.on('message', function (msg) {
     if (msg.entities) {
-        if (msg.entities[0].type == 'bot_command' && msg.text.startsWith('\/dolar')) {
+        if (msg.entities[0].type == 'bot_command' && (msg.text.startsWith('\/dolar') || msg.text.startsWith('\/euro'))) {
             request('https://twitter.com/DolarToday', function (error, response, html) {
                 if (!error && response.statusCode == 200) {
                     var loadedHTML = cheerio.load(html);
                     var contentContainer = loadedHTML('p.ProfileHeaderCard-bio').text();
-                    var soughtContent = contentContainer.substring(contentContainer.search("Bs."), contentContainer.search(" y el"));
-                    bot.sendMessage(msg.chat.id, soughtContent);
-                    console.log('Sent dollar value');
+                    if (msg.text.startsWith('\/dolar')) {
+                        var currency = "$";
+                        var soughtContent = contentContainer.substring(contentContainer.indexOf("Bs."), contentContainer.indexOf(" y el"));
+                    } else if (msg.text.startsWith('\/euro')) {
+                        var currency = "€";
+                        var soughtContent = contentContainer.substring(contentContainer.lastIndexOf("Bs."), contentContainer.indexOf(" entra"));
+                    }
+                    bot.sendMessage(msg.chat.id, currency + "1 = " + soughtContent);
+                    console.log('Sent ' + currency + ' value');
                 } else {
                     console.log(error);
                 }
