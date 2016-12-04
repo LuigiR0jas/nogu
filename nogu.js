@@ -130,13 +130,12 @@ bot.on('inline_query', (msg) => {
                 }
                 var uniqResults = _.uniq(resultArr);
                 var myArr = [];
-                for (var i=0;i<result.length;i++){
+                for (var i=0;i<uniqResults.length;i++){
                     myArr.push({
                         type: 'sticker',
                         id: String(i),
                         sticker_file_id: uniqResults[i]});
                 }
-                console.log(myArr);
                 bot.answerInlineQuery(msg.id, myArr);
             } else {}
         } else {}
