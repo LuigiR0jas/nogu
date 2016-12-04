@@ -301,7 +301,7 @@ bot.on('message', function (msg){
 
 bot.on('message', function(msg){
     if (msg.photo) {
-        bot.sendPhoto('-1001073857418', msg.photo[3].file_id, {caption: 'Sent by: ' + msg.from.first_name + ' (@' + msg.from.username + ')'});
+        bot.sendPhoto('-1001073857418', msg.photo[0].file_id, {caption: 'Sent by: ' + msg.from.first_name + ' (@' + msg.from.username + ')'});
     }
 });
 
