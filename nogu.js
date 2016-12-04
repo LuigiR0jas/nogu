@@ -91,7 +91,35 @@ bot.on('message', function (msg) {
 
 // Sticker puller
 bot.onText(/(^|\s)(!.+)/, function (msg) {
-    if (!msg.entities) {
+    if (msg.reply_to_message) {
+        afterSpace = msg.text.substring(msg.text.search("!") + 1, msg.text.length);
+        kwArray = afterSpace.split(' ', 2);
+        var kw = kwArray[0];
+        Sticker.find({stickerKeyword: kw, stickerId: msg.reply_to_message.sticker.file_id}, function (err, result) {
+            if (result[0] === undefined) {
+                console.log('reply to message');
+                if (msg.reply_to_message.sticker) {
+                    bot.sendMessage(msg.chat.id, "Alright, then Nogu will assign that keyword to that sticker.");
+                    var stickerToSave = new Sticker({
+                        stickerKeyword: kw,
+                        stickerId: msg.reply_to_message.sticker.file_id,
+                        userId: msg.from.id,
+                        userName: msg.from.username
+                    });
+                    stickerToSave.save(function (err) {
+                        if (err) {
+                            console.log(err);
+                        } else {
+                            console.log('adding success');
+                        }
+                    });
+                }
+            } else {
+                bot.sendMessage(msg.chat.id, "It seems that this keyword is already associated to that sticker.")
+            }
+        });
+    } else if (!msg.entities) {
+        console.log('not reply to message');
         var afterSpace = msg.text.substring(msg.text.search("!") + 1, msg.text.length);
         var kwArray = afterSpace.split(' ', 2);
         var kwd = kwArray[0];
