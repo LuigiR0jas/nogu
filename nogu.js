@@ -129,10 +129,12 @@ bot.on('inline_query', (msg) => {
                     resultArr.push(result[e].stickerId);
                 }
                 var uniqResults = _.uniq(resultArr);
-                console.log(uniqResults);
                 var myArr = [];
                 for (var i=0;i<result.length;i++){
-                    myArr.push({type: 'sticker',id: String(i),sticker_file_id: uniqResults[i]});
+                    myArr.push({
+                        type: 'sticker',
+                        id: String(i),
+                        sticker_file_id: uniqResults[i]});
                 }
                 bot.answerInlineQuery(msg.id, myArr);
             } else {}
