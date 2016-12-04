@@ -12,6 +12,9 @@ const cheerio = require('cheerio');
 const fs = require('fs');
 const translate = require('node-google-translate-skidz');
 
+// Other modules
+const _ = require('underscore');
+
 // DB modules
 const uri = 'mongodb://localhost/telegram';
 const mongoose = require('mongoose');
@@ -115,15 +118,23 @@ bot.on('inline_query', (msg) => {
     var afterSpace = msg.query.substring(msg.query.search("!") + 1, msg.query.length);
     var kwArray = afterSpace.split(' ', 2);
     var kwd = kwArray[0];
+    console.log('received');
     Sticker.find({stickerKeyword: kwd}, (err, result) => {
         if (err) {
             console.log(err);
             bot.answerInlineQuery(msg.query.id, [{type: 'article',id: '400',title: 'ERROR',input_message_content:{message_text: 'ERROR! NOGU BE DEAD! k maybe not'}}]);
         } else if (result[0] !== undefined) {
+            console.log('found');
             if (result[0].stickerId !== undefined) {
+                var resultArr = [];
+                for (var e=0;e<result.length;e++){
+                    resultArr.push(result[e].stickerId);
+                }
+                var uniqResults = _.uniq(resultArr);
+                console.log(uniqResults);
                 var myArr = [];
                 for (var i=0;i<result.length;i++){
-                    myArr.push({type: 'sticker',id: String(i),sticker_file_id: result[i].stickerId});
+                    myArr.push({type: 'sticker',id: String(i),sticker_file_id: uniqResults[i]});
                 }
                 bot.answerInlineQuery(msg.id, myArr);
             } else {}
