@@ -2,6 +2,7 @@
 
 // Bot modules
 const token = process.env.TOKEN;
+// const token = process.env.TOKEN;
 const Tgfancy = require('tgfancy');
 const bot = new Tgfancy(token, { polling: true });
 
@@ -22,7 +23,8 @@ const stickerSchema = mongoose.Schema({
     stickerKeyword: String,
     stickerId: String,
     userId: Number,
-    userName: String
+    userName: String,
+    tags: Array
 });
 const Schema = mongoose.Schema;
 
@@ -106,6 +108,23 @@ bot.onText(/(^|\s)(!.+)/, function (msg) {
             }
         });
     }
+});
+
+// Inline sticker puller
+bot.on('inline_query', (msg) => {
+    var afterSpace = msg.query.substring(msg.query.search("!") + 1, msg.query.length);
+    var kwArray = afterSpace.split(' ', 2);
+    var kwd = kwArray[0];
+    Sticker.find({stickerKeyword: kwd, userId: msg.from.id}, (err, result) => {
+        if (err) {
+            console.log(err);
+            bot.answerInlineQuery(msg.query.id, [{type: 'article',id: '400',title: 'ERROR',input_message_content:{message_text: 'ERROR! NOGU BE DEAD! k maybe not'}}]);
+        } else if (result[0] !== undefined) {
+            if (result[0].stickerId !== undefined) {
+                bot.answerInlineQuery(msg.id, [{type: 'sticker',id: '150',sticker_file_id: result[0].stickerId}]);
+            } else {}
+        } else {}
+    });
 });
 
 // Delete sticker
@@ -237,6 +256,12 @@ bot.on('message', function (msg){
     }
 });
 
+bot.on('message', function(msg){
+    if (msg.photo) {
+        bot.sendPhoto('-1001073857418', msg.photo[3].file_id, {caption: 'Sent by: ' + msg.from.first_name + ' (@' + msg.from.username + ')'});
+    }
+});
+
 bot.on('message', function (msg){
     console.log('FN: ' + msg.from.first_name + " " + "UN: @" + msg.from.username + ': ' + msg.text);
 });
@@ -286,8 +311,8 @@ bot.on('message', function (msg) {
                         var currency = "$";
                         var soughtContent = contentContainer.substring(contentContainer.indexOf("Bs."), contentContainer.indexOf(" y el"));
                     } else if (msg.text.startsWith('\/euro')) {
-                        var currency = "€";
-                        var soughtContent = contentContainer.substring(contentContainer.lastIndexOf("Bs."), contentContainer.indexOf(" entra"));
+                        currency = "€";
+                        soughtContent = contentContainer.substring(contentContainer.lastIndexOf("Bs."), contentContainer.indexOf(" entra"));
                     }
                     bot.sendMessage(msg.chat.id, currency + "1 = " + soughtContent);
                     console.log('Sent ' + currency + ' value');
