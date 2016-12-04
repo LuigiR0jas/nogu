@@ -136,6 +136,7 @@ bot.on('inline_query', (msg) => {
                         id: String(i),
                         sticker_file_id: uniqResults[i]});
                 }
+                console.log(myArr);
                 bot.answerInlineQuery(msg.id, myArr);
             } else {}
         } else {}
