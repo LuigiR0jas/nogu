@@ -2,7 +2,7 @@
 
 // Bot modules
 const token = process.env.TOKEN;
-// const token = process.env.TOKEN;
+
 const Tgfancy = require('tgfancy');
 const bot = new Tgfancy(token, { polling: true });
 
