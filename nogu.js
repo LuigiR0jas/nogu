@@ -115,13 +115,17 @@ bot.on('inline_query', (msg) => {
     var afterSpace = msg.query.substring(msg.query.search("!") + 1, msg.query.length);
     var kwArray = afterSpace.split(' ', 2);
     var kwd = kwArray[0];
-    Sticker.find({stickerKeyword: kwd, userId: msg.from.id}, (err, result) => {
+    Sticker.find({stickerKeyword: kwd}, (err, result) => {
         if (err) {
             console.log(err);
             bot.answerInlineQuery(msg.query.id, [{type: 'article',id: '400',title: 'ERROR',input_message_content:{message_text: 'ERROR! NOGU BE DEAD! k maybe not'}}]);
         } else if (result[0] !== undefined) {
             if (result[0].stickerId !== undefined) {
-                bot.answerInlineQuery(msg.id, [{type: 'sticker',id: '150',sticker_file_id: result[0].stickerId}]);
+                var myArr = [];
+                for (var i=0;i<result.length;i++){
+                    myArr.push({type: 'sticker',id: String(i),sticker_file_id: result[i].stickerId});
+                }
+                bot.answerInlineQuery(msg.id, myArr);
             } else {}
         } else {}
     });
