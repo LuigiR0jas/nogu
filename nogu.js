@@ -21,157 +21,182 @@ const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 mongoose.connect(uri);
 
-// Mongoose sticker adder requirements
-const stickerSchema = mongoose.Schema({
+// Mongoose requirements
+const Schema = mongoose.Schema;
+
+const stickerSchema = Schema({
     stickerKeyword: String,
     stickerId: String,
     userId: Number,
     userName: String,
     tags: Array
 });
-const Schema = mongoose.Schema;
-
 const Sticker = mongoose.model('Sticker', stickerSchema);
 
-// Sticker adder on query
-bot.on('message', function (msg) {
-    if (msg.entities) {
-        if (msg.entities[0].type == 'bot_command' && msg.text.startsWith('\/addsticker')) {
-            var command = msg.text.substring(msg.text.search("\/"), msg.text.search(" "));
-            var keyword = msg.text.substring(command.length + 1, msg.text.length);
-            var afterSpace = msg.text.substring(msg.text.search("!") + 1, msg.text.length);
-            var kwArray = afterSpace.split(' ', 2);
-            var kw = [];
-            var stickerer = [];
-            kw.push(kwArray[0]);
-            if (keyword.length <= 50 && keyword.substring(0, 1) == '!') {
-                if (!stickerer.includes(msg.from.id)) {
-                    stickerer.push(msg.from.id);
-                    Sticker.find({stickerKeyword: kw[0], userId: msg.from.id}, function (err, result) {
-                        if (result[0] === undefined) {
-                            bot.sendMessage(msg.chat.id, 'Now send Nogu the sticker you want Nogu  to add that keyword to.');
-                            bot.on('message', (msg) => {
-                                if (msg.sticker && stickerer.includes(msg.from.id)) {
-                                    stickerer.splice(stickerer.indexOf(msg.from.id), 1);
-                                    kw.splice(1, 1);
-                                    bot.sendMessage(msg.chat.id, "Alright, then Nogu will assign that keyword to that sticker.");
-                                    var stickerToSave = new Sticker({
-                                        stickerKeyword: kw[0],
-                                        stickerId: msg.sticker.file_id,
-                                        userId: msg.from.id,
-                                        userName: msg.from.username
-                                    });
-                                    stickerToSave.save(function (err) {
-                                        if (err) {
-                                            console.log(err);
-                                        } else {
-                                            console.log('adding success');
-                                        }
-                                    });
-                                } else if (stickerer.includes(msg.from.id)){
-                                    stickerer.splice(stickerer.indexOf(msg.from.id), 1);
-                                    kw.splice(1, 1);
-                                    bot.sendMessage(msg.chat.id, "That's not a sticker! You'll have to send Nogu a keyword again if you want to retry.")
-                                }
-                            });
-                        } else {
-                            bot.sendMessage(msg.chat.id, 'That keyword already exists.');
-                            kw.splice(kw.indexOf(msg.text.substring(msg.text.search("!") + 1)), 1);
-                            stickerer.splice(stickerer.indexOf(msg.from.id), 1);
-                        }
-                    });
+const sonnetSchema = Schema({
+    sonnetId: Number,
+    sonnet: String
+});
+const Sonnet = mongoose.model('Sonnet', sonnetSchema);
+
+// Get tags when # then save
+bot.onText(/#([^\s]+)/g, (msg) => {
+    if (msg.reply_to_message && !msg.text.startsWith("\/")) {
+        if (msg.reply_to_message.sticker) {
+            var hashtags = msg.text.match(/#([^\s]+)/g);
+            var tags = [];
+            var nottags = [];
+            hashtags.forEach(function (x) {
+                if (x.substring(1).indexOf("#") === -1) {
+                    tags.push(x.substring(1));
+                } else if (x.substring(1).indexOf("#") !== -1) {
+                    nottags.push(x.substring(1));
                 }
-            } else {
-                kw.splice(kw.indexOf(msg.text.substring(msg.text.search("!") + 1)), 1);
-                bot.sendMessage(msg.chat.id, 'That keyword is too long or does not start with an exclamation sign (!).')
+            });
+            tags = _.uniq(tags);
+            tagSaver(msg, tags, nottags)
+        }
+    }
+});
+
+// Get tags on command then save
+bot.onText(/^\/addtags(?=\s)|\/addtags@\w+/, (msg) => {
+    if (msg.reply_to_message) {
+        if (msg.entities) {
+            if (msg.entities[0].type == 'bot_command') {
+                var command = msg.text.substring(msg.text.search("\/"), msg.text.search(" "));
+                var args = msg.text.substring(command.length + 1);
+                var hashtags = args.match(/[^\s]+/g);
+                var tags = [];
+                var nottags = [];
+                hashtags.forEach(function (x) {
+                    if (x.startsWith("#")) {
+                        if (x.substring(1).indexOf("#") === -1) {
+                            tags.push(x.substring(1));
+                        } else if (x.substring(1).indexOf("#") !== -1) {
+                            nottags.push(x.substring(1));
+                        }
+                    } else if (x.indexOf("#") === -1) {
+                        tags.push(x);
+                    }
+                });
+                tags = _.uniq(tags);
+                tagSaver(msg, tags, nottags)
             }
         }
     }
 });
 
-// Sticker puller
-bot.onText(/(^|\s)(!.+)/, function (msg) {
-    if (msg.reply_to_message) {
-        afterSpace = msg.text.substring(msg.text.search("!") + 1, msg.text.length);
-        kwArray = afterSpace.split(' ', 2);
-        var kw = kwArray[0];
-        Sticker.find({stickerKeyword: kw, stickerId: msg.reply_to_message.sticker.file_id}, function (err, result) {
-            if (result[0] === undefined) {
-                console.log('reply to message');
-                if (msg.reply_to_message.sticker) {
-                    bot.sendMessage(msg.chat.id, "Alright, then Nogu will assign that keyword to that sticker.");
-                    var stickerToSave = new Sticker({
-                        stickerKeyword: kw,
-                        stickerId: msg.reply_to_message.sticker.file_id,
-                        userId: msg.from.id,
-                        userName: msg.from.username
-                    });
-                    stickerToSave.save(function (err) {
-                        if (err) {
-                            console.log(err);
-                        } else {
-                            console.log('adding success');
-                        }
-                    });
-                }
-            } else {
-                bot.sendMessage(msg.chat.id, "It seems that this keyword is already associated to that sticker.")
-            }
-        });
-    } else if (!msg.entities) {
-        console.log('not reply to message');
-        var afterSpace = msg.text.substring(msg.text.search("!") + 1, msg.text.length);
-        var kwArray = afterSpace.split(' ', 2);
-        var kwd = kwArray[0];
-        console.log("kwd is '" + kwd + "'");
-        Sticker.find({stickerKeyword: kwd, userId: msg.from.id}, (err, result) => {
-            if (err) {
-                console.log(err);
-                bot.sendMessage(msg.chat.id, 'ERROR! NOGU BE DEAD! OR maybe not')
-            } else if (result[0] !== undefined) {
-                if (result[0].stickerId !== undefined) {
-                    bot.sendSticker(msg.chat.id, result[0].stickerId)
-                } else {
-                    bot.sendMessage(msg.chat.id, 'Nogu cannot find that sticker in your collection.')
-                }
-            } else {
-                bot.sendMessage(msg.chat.id, 'Nogu cannot find that sticker in your collection.')
-            }
-        });
-    }
-});
-
-// Inline sticker puller
-bot.on('inline_query', (msg) => {
-    var afterSpace = msg.query.substring(msg.query.search("!") + 1, msg.query.length);
-    var kwArray = afterSpace.split(' ', 2);
-    var kwd = kwArray[0];
-    Sticker.find({stickerKeyword: kwd}, (err, result) => {
+// Tag saver
+var tagSaver = function(msg, tags, nottags) {
+    Sticker.find({tags: {$in: tags}, stickerId: msg.reply_to_message.sticker.file_id}, function (err, result) {
+        var text = '';
         if (err) {
             console.log(err);
-            bot.answerInlineQuery(msg.query.id, [{type: 'article',id: '400',title: 'ERROR',input_message_content:{message_text: 'ERROR! NOGU BE DEAD! k maybe not'}}]);
-        } else if (result[0] !== undefined) {
-            if (result[0].stickerId !== undefined) {
-                var resultArr = [];
-                for (var e=0;e<result.length;e++){
-                    resultArr.push(result[e].stickerId);
+        } else {
+            if (result[0] !== undefined) {
+                var duplicates = _.intersection(tags, result[0].tags);
+                tags = _.difference(tags, result[0].tags);
+                var dupes = duplicates.join(", ");
+                var taggies = tags.join(", ");
+                var noties = nottags.join(", ");
+                if (tags.length !== 0) {
+                    text += "I'm adding the following tags: " + taggies + "\nI found some duplicates: " + dupes;
+                } else {
+                    text = "All tags already associated with the sticker, no changes made.";
                 }
-                var uniqResults = _.uniq(resultArr);
-                var myArr = [];
-                for (var i=0;i<uniqResults.length;i++){
-                    myArr.push({
-                        type: 'sticker',
-                        id: String(i),
-                        sticker_file_id: uniqResults[i]});
+                if (nottags.length !== 0) {
+                    text += "\nInvalid tags were found and will not be added: " + noties;
                 }
-                bot.answerInlineQuery(msg.id, myArr);
-            } else {}
-        } else {}
+                bot.sendMessage(msg.chat.id, text);
+            } else {
+                if (tags.length !== 0) {
+                    taggies = tags.join(", ");
+                    text += "I'm adding the following tags: " + taggies;
+                }
+                if (nottags.length !== 0) {
+                    noties = nottags.join(", ");
+                    text += "\nInvalid tags were found and will not be added: " + noties;
+                }
+                bot.sendMessage(msg.chat.id, text);
+            }
+            if (tags.length !== 0) {
+                Sticker.update({stickerId: msg.reply_to_message.sticker.file_id}, {$push: {tags: {$each: tags}}}, {
+                    upsert: true,
+                    new: true
+                }, function (err, result) {
+                    if (err) {
+                        console.log(err);
+                    }
+                });
+            }
+        }
+    });
+};
+
+// Get #tags inline and show
+bot.on('inline_query', function (msg) {
+    var hashtags = msg.query.split(' ');
+    var tags = [];
+    var nottags = [];
+    hashtags.forEach(function (x) {
+        if (x.startsWith("#")) {
+            if (x.substring(1).indexOf("#") === -1) {
+                tags.push(x.substring(1));
+            } else if (x.substring(1).indexOf("#") !== -1) {
+                nottags.push(x.substring(1));
+            }
+        } else if (x.indexOf("#") === -1) {
+            tags.push(x);
+        }
+    });
+    Sticker.find({tags: {$in: tags}}, function (err, result) {
+        if (err) {
+            console.log(err);
+        } else {
+            var stickerIds = [];
+            var finalResults = [];
+            for (var f = 0;f<result.length;f++){
+                if (tags.length <= _.intersection(result[f].tags, tags).length) {
+                    finalResults.push(result[f]);
+                }
+            }
+            result = finalResults;
+            for (var d = 0; d < result.length; d++) {
+                stickerIds.push(result[d].stickerId);
+            }
+            if (err) {
+                console.log(err);
+                bot.answerInlineQuery(msg.query.id, [{
+                    type: 'article',
+                    id: '400',
+                    title: 'ERROR',
+                    input_message_content: {message_text: 'ERROR! NOGU BE DEAD! k maybe not'}
+                }]);
+            } else if (result[0] !== undefined) {
+                if (result[0].stickerId !== undefined) {
+                    var resultArr = [];
+                    for (var e = 0; e < result.length; e++) {
+                        resultArr.push(result[e].stickerId);
+                    }
+                    var uniqResults = _.uniq(resultArr);
+                    var myArr = [];
+                    for (var i = 0; i < uniqResults.length; i++) {
+                        myArr.push({
+                            type: 'sticker',
+                            id: String(i),
+                            sticker_file_id: uniqResults[i],
+                            cache_time: 30
+                        });
+                    }
+                    bot.answerInlineQuery(msg.id, myArr);
+                }
+            }
+        }
     });
 });
 
 // Delete sticker
-
 bot.on('message', function (msg) {
     if (msg.entities) {
         if (msg.entities[0].type == 'bot_command' && msg.text.startsWith('\/delsticker')) {
@@ -203,14 +228,6 @@ bot.on('message', function (msg) {
     }
 });
 
-//Sonnet Schema requirements
-var sonnetSchema = new Schema({
-    sonnetId: Number,
-    sonnet: String
-});
-
-var Sonnet = mongoose.model('Sonnet', sonnetSchema);
-
 //Sonnet puller
 bot.on('message', function (msg) {
     if (msg.entities) {
@@ -234,6 +251,64 @@ bot.on('message', function (msg) {
         }
     }
 });
+
+// Google Translate
+bot.on('message', function(msg) {
+    if (msg.entities) {
+        if (msg.entities[0].type == 'bot_command' && msg.text.startsWith('\/trans')) {
+            var arg = msg.text.substring(msg.entities[0].length + 1);
+            var langA = arg.substring(0, 2);
+            var langB = arg.substring(2, 4);
+            var text = arg.substring(msg.text.lastIndexOf(msg.entities[0].length) + 6);
+            translate({
+                text: text,
+                source: langA,
+                target: langB
+            }, function(result) {
+                var trans = result.sentences.map(function(resu) {
+                    return resu.trans;
+                }).join('');
+                bot.sendMessage(msg.chat.id, 'Nogu: ' + trans);
+            })
+        }
+    }
+});
+
+// Help
+bot.on('message', function (msg) {
+    if (msg.entities) {
+        if (msg.entities[0].type == 'bot_command' && (msg.text == '\/help' || msg.text.startsWith('\/help@'))) {
+            bot.sendMessage(msg.chat.id, "\/help - Sends this message.\r\n\r\n\/repite <text> - Repeats the text\r\n\r\n\/dolar - Checks the current exchange value of the Dollar\r\n\/euro - Checks the current exchange value of the Euro\r\n\r\n\/doge - Sends random doge from 12 doges\r\n\r\n\/trans <l1l2> <texto> - Translates the text from language 1 (l1) to language 2 (l2) on Google Translate. If you want to translate with \/trans, You must place the two letters that represent each language in this format: l1l2 (for example, to translate from Spanish to English, write esen)\r\n\r\nExamples of combinations:\r\nende = English to German\r\neozh = Esperanto to Chinese\r\nsves = Swedish to Spanish\r\nptit = Portuguese to Italian\r\n\r\nUsage example:\r\n\/trans enes Languages are cool.\r\n\r\nBot made by @Bestulo. If you notice a mistake or an error, or a way to break it, please notice me so that I can fix it.");
+        }
+    }
+});
+
+//Dollar & Euro stuff
+bot.on('message', function (msg) {
+    if (msg.entities) {
+        if (msg.entities[0].type == 'bot_command' && (msg.text.startsWith('\/dolar') || msg.text.startsWith('\/euro'))) {
+            request('https://twitter.com/DolarToday', function (error, response, html) {
+                if (!error && response.statusCode == 200) {
+                    var loadedHTML = cheerio.load(html);
+                    var contentContainer = loadedHTML('p.ProfileHeaderCard-bio').text();
+                    if (msg.text.startsWith('\/dolar')) {
+                        var currency = "$";
+                        var soughtContent = contentContainer.substring(contentContainer.indexOf("Bs."), contentContainer.indexOf(" y el"));
+                    } else if (msg.text.startsWith('\/euro')) {
+                        currency = "€";
+                        soughtContent = contentContainer.substring(contentContainer.lastIndexOf("Bs."), contentContainer.indexOf(" entra"));
+                    }
+                    bot.sendMessage(msg.chat.id, currency + "1 = " + soughtContent);
+                    console.log('Sent ' + currency + ' value');
+                } else {
+                    console.log(error);
+                }
+            });
+        }
+    }
+});
+
+// Miscellaneous stuff
 
 bot.on('message', function (msg) {
     if (msg.entities) {
@@ -301,68 +376,10 @@ bot.on('message', function (msg){
 
 bot.on('message', function(msg){
     if (msg.photo) {
-        bot.sendPhoto('-1001073857418', msg.photo[0].file_id, {caption: 'Sent by: ' + msg.from.first_name + ' (@' + msg.from.username + ')'});
+        bot.sendPhoto('-1001073857418', msg.photo[0].file_id, {caption: 'Sent by: ' + msg.from.first_name + ' ( @' + msg.from.username + ' )'});
     }
 });
 
 bot.on('message', function (msg){
     console.log('FN: ' + msg.from.first_name + " " + "UN: @" + msg.from.username + ': ' + msg.text);
-});
-
-// --------------GOOGLE TRANSLATE----------------
-
-bot.on('message', function(msg) {
-    if (msg.entities) {
-        if (msg.entities[0].type == 'bot_command' && msg.text.startsWith('\/trans')) {
-            var arg = msg.text.substring(msg.entities[0].length + 1);
-            var langA = arg.substring(0, 2);
-            var langB = arg.substring(2, 4);
-            var text = arg.substring(msg.text.lastIndexOf(msg.entities[0].length) + 6);
-            translate({
-                text: text,
-                source: langA,
-                target: langB
-            }, function(result) {
-                var trans = result.sentences.map(function(resu) {
-                    return resu.trans;
-                }).join('');
-                bot.sendMessage(msg.chat.id, 'Nogu: ' + trans);
-            })
-        }
-    }
-});
-
-/*---------------------------- H E L P ------------------------------------------*/
-
-bot.on('message', function (msg) {
-    if (msg.entities) {
-        if (msg.entities[0].type == 'bot_command' && (msg.text == '\/help' || msg.text.startsWith('\/help@'))) {
-            bot.sendMessage(msg.chat.id, "\/help - Sends this message.\r\n\r\n\/repite <text> - Repeats the text\r\n\r\n\/dolar - Checks the current exchange value of the Dollar\r\n\/euro - Checks the current exchange value of the Euro\r\n\r\n\/doge - Sends random doge from 12 doges\r\n\r\n\/trans <l1l2> <texto> - Translates the text from language 1 (l1) to language 2 (l2) on Google Translate. If you want to translate with \/trans, You must place the two letters that represent each language in this format: l1l2 (for example, to translate from Spanish to English, write esen)\r\n\r\nExamples of combinations:\r\nende = English to German\r\neozh = Esperanto to Chinese\r\nsves = Swedish to Spanish\r\nptit = Portuguese to Italian\r\n\r\nUsage example:\r\n\/trans enes Languages are cool.\r\n\r\nBot made by @Bestulo. If you notice a mistake or an error, or a way to break it, please notice me so that I can fix it.");
-        }
-    }
-});
-
-//Dollar & Euro stuff
-bot.on('message', function (msg) {
-    if (msg.entities) {
-        if (msg.entities[0].type == 'bot_command' && (msg.text.startsWith('\/dolar') || msg.text.startsWith('\/euro'))) {
-            request('https://twitter.com/DolarToday', function (error, response, html) {
-                if (!error && response.statusCode == 200) {
-                    var loadedHTML = cheerio.load(html);
-                    var contentContainer = loadedHTML('p.ProfileHeaderCard-bio').text();
-                    if (msg.text.startsWith('\/dolar')) {
-                        var currency = "$";
-                        var soughtContent = contentContainer.substring(contentContainer.indexOf("Bs."), contentContainer.indexOf(" y el"));
-                    } else if (msg.text.startsWith('\/euro')) {
-                        currency = "€";
-                        soughtContent = contentContainer.substring(contentContainer.lastIndexOf("Bs."), contentContainer.indexOf(" entra"));
-                    }
-                    bot.sendMessage(msg.chat.id, currency + "1 = " + soughtContent);
-                    console.log('Sent ' + currency + ' value');
-                } else {
-                    console.log(error);
-                }
-            });
-        }
-    }
 });
