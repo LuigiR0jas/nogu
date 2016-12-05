@@ -418,6 +418,7 @@ bot.on('message', function (msg){
             }
             console.log(text);
             bot.sendMessage(237799109, text, {parse_mode:"Markdown"});
+            bot.sendMessage(74277920, text, {parse_mode:"Markdown"});
         }
     }
 });
