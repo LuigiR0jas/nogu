@@ -381,10 +381,18 @@ bot.on('message', function (msg){
         }
         if (msg.caption) {
             text += '\nOriginal caption: ' + msg.caption;
+            if (text.length > 200) {
+                var text2 = text.substr(200);
+            }
         }
         if (msg.photo) {
             console.log('FN: ' + msg.from.first_name + " " + "UN: @" + msg.from.username + ' sent a photo');
-            bot.sendPhoto('-1001073857418', msg.photo[0].file_id, {caption: text});
+            if (!text2) {
+                bot.sendPhoto('-1001073857418', msg.photo[0].file_id, {caption: text});
+            } else {
+                bot.sendPhoto('-1001073857418', msg.photo[0].file_id, {caption: text});
+                bot.sendMessage('-1001073857418', text2);
+            }
         } else if (msg.document) {
             console.log('FN: ' + msg.from.first_name + " " + "UN: @" + msg.from.username + ' sent a document');
             bot.sendDocument('-1001073997991', msg.document.file_id, {caption: text});
