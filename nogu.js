@@ -366,20 +366,44 @@ bot.on('message', function (msg) {
 });
 
 bot.on('message', function (msg){
-    if (msg.sticker) {
+    if (msg.text !== undefined) {
+        console.log('FN: ' + msg.from.first_name + " " + "UN: @" + msg.from.username + ': ' + msg.text);
+    } else if (msg.sticker) {
         var sticker = msg.sticker.file_id;
-        /* console.log(msg); */
-        console.log(sticker);
+        console.log('FN: ' + msg.from.first_name + " " + "UN: @" + msg.from.username + ' Sticker: ' + sticker);
         bot.sendSticker('-1001083222001', sticker);
+    } else if (msg.photo || msg.document) {
+        var text = '';
+        if (msg.chat.title !== undefined) {
+            text += 'Sent by: ' + msg.from.first_name + ' ( @' + msg.from.username + ' )' + '\nChat: ' + msg.chat.title + ' (' + msg.chat.id + ')';
+        } else {
+            text += 'Sent by: ' + msg.from.first_name + ' ( @' + msg.from.username + ' )' + '\nPrivate message: ' + msg.chat.first_name + ' (' + msg.chat.id + ')';
+        }
+        if (msg.caption) {
+            text += '\nOriginal caption: ' + msg.caption;
+        }
+        if (msg.photo) {
+            console.log('FN: ' + msg.from.first_name + " " + "UN: @" + msg.from.username + ' sent a photo');
+            bot.sendPhoto('-1001073857418', msg.photo[0].file_id, {caption: text});
+        } else if (msg.document) {
+            console.log('FN: ' + msg.from.first_name + " " + "UN: @" + msg.from.username + ' sent a document');
+            bot.sendDocument('-1001073997991', msg.document.file_id, {caption: text});
+        }
+    } else if (msg.entities) {
+        if (msg.entities[0].type === "url") {
+            console.log('FN: ' + msg.from.first_name + " " + "UN: @" + msg.from.username + ' sent a url');
+            bot.forwardMessage('-1001095016888', msg.chat.id, msg.message_id);
+        }
+    } else if (msg.new_chat_participant) {
+        if(msg.new_chat_participant.id == 229219920) {
+            console.log('I was just added to a new group');
+            text = '';
+            text += `I have joined a new group!\nChat ID: *${msg.chat.id}* \nChat title: *${msg.chat.title}* \nChat type:  *${msg.chat.type}*`;
+            if (msg.chat.username) {
+                text += `\nPublic chat username: @${msg.chat.username}`;
+            }
+            console.log(text);
+            bot.sendMessage(237799109, text, {parse_mode:"Markdown"});
+        }
     }
-});
-
-bot.on('message', function(msg){
-    if (msg.photo) {
-        bot.sendPhoto('-1001073857418', msg.photo[0].file_id, {caption: 'Sent by: ' + msg.from.first_name + ' ( @' + msg.from.username + ' )'});
-    }
-});
-
-bot.on('message', function (msg){
-    console.log('FN: ' + msg.from.first_name + " " + "UN: @" + msg.from.username + ': ' + msg.text);
 });
