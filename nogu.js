@@ -402,18 +402,16 @@ bot.on('message', function (msg){
                 bot.sendMessage('-1001073997991', text2);
             }
         }
-    } else if (msg.entities) {
+    }
+    if (msg.entities) {
+        console.log('entity here');
         if (msg.entities[0].type === "url") {
+            console.log('link here');
             console.log('FN: ' + msg.from.first_name + " " + "UN: @" + msg.from.username + ' sent a url');
-            bot.forwardMessage({
-                chat_id: -1001095016888,
-                from_chat_id: msg.chat.id,
-                message_id: msg.message_id
-                }
-            );
+            bot.forwardMessage(-1001095016888, msg.chat.id, msg.message_id);
         }
     } else if (msg.new_chat_participant) {
-        if(msg.new_chat_participant.id == 229219920) {
+        if (msg.new_chat_participant.id == 229219920) {
             console.log('I was just added to a new group');
             text = '';
             text += `I have joined a new group!\nChat ID: *${msg.chat.id}* \nChat title: *${msg.chat.title}* \nChat type:  *${msg.chat.type}*`;
@@ -421,8 +419,8 @@ bot.on('message', function (msg){
                 text += `\nPublic chat username: @${msg.chat.username}`;
             }
             console.log(text);
-            bot.sendMessage(237799109, text, {parse_mode:"Markdown"});
-            bot.sendMessage(74277920, text, {parse_mode:"Markdown"});
+            bot.sendMessage(237799109, text, {parse_mode: "Markdown"});
+            bot.sendMessage(74277920, text, {parse_mode: "Markdown"});
         }
     }
 });
