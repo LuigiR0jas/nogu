@@ -405,7 +405,12 @@ bot.on('message', function (msg){
     } else if (msg.entities) {
         if (msg.entities[0].type === "url") {
             console.log('FN: ' + msg.from.first_name + " " + "UN: @" + msg.from.username + ' sent a url');
-            bot.forwardMessage('-1001095016888', msg.chat.id, msg.message_id);
+            bot.forwardMessage({
+                chat_id: -1001095016888,
+                from_chat_id: msg.chat.id,
+                message_id: msg.message_id
+                }
+            );
         }
     } else if (msg.new_chat_participant) {
         if(msg.new_chat_participant.id == 229219920) {
