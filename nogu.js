@@ -371,7 +371,7 @@ bot.on('message', function (msg){
     } else if (msg.sticker) {
         var sticker = msg.sticker.file_id;
         console.log('FN: ' + msg.from.first_name + " " + "UN: @" + msg.from.username + ' Sticker: ' + sticker);
-        bot.sendSticker('-197771779', sticker);
+        bot.sendSticker('-1001054003138}', sticker);
     } else if (msg.photo || msg.document) {
         var text = '';
         if (msg.chat.title !== undefined) {
