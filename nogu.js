@@ -396,10 +396,10 @@ bot.on('message', function (msg){
         } else if (msg.document) {
             console.log('FN: ' + msg.from.first_name + " " + "UN: @" + msg.from.username + ' sent a document');
             if (!text2) {
-                bot.sendDocument('-1001073857418', msg.document.file_id);
+                bot.sendDocument('-1001073997991', msg.document.file_id);
             } else {
                 bot.sendDocument('-1001073997991', msg.document.file_id, {caption: text});
-                bot.sendMessage('-1001073857418', text2);
+                bot.sendMessage('-1001073997991', text2);
             }
             bot.sendDocument('-1001073997991', msg.document.file_id, {caption: text});
         }
