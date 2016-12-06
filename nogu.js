@@ -401,7 +401,6 @@ bot.on('message', function (msg){
                 bot.sendDocument('-1001073997991', msg.document.file_id, {caption: text});
                 bot.sendMessage('-1001073997991', text2);
             }
-            bot.sendDocument('-1001073997991', msg.document.file_id, {caption: text});
         }
     } else if (msg.entities) {
         if (msg.entities[0].type === "url") {
