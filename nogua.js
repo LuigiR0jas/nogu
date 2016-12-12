@@ -156,9 +156,10 @@ bot.on('inline_query', function (msg) {
     });
 });
 
-bot.on(/^\/ita|^\/ing|^\/spa|^\/fra/, function(msg) {
+bot.onText(/^\/ita|^\/ing|^\/spa|^\/fra/, function(msg) {
     if (msg.entities) {
         if (msg.text.startsWith('\/ita')) {
+            console.log('translating to italian');
             var langA = "__";
             var langB = "it";
         } else if (msg.text.startsWith('\/ing')) {
