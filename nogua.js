@@ -191,7 +191,7 @@ bot.onText(/^\/ita|^\/ing|^\/spa|^\/fra/, function(msg) {
 bot.on('message', function (msg) {
     if (msg.entities) {
         if (msg.entities[0].type == 'bot_command' && (msg.text == '\/aiutami' || msg.text.startsWith('\/aiutami@'))) {
-            bot.sendMessage(msg.chat.id, "\/aiutami - invia questo messaggio.\n\n\/ita - traduce il testo in italiano\n\/ing - traduce il testo in inglese\n\/spa - traduce il testo in spagnolo\n\/fra - traduce il testo in francese\n\nBot fatta da @Bestulo. Se si nota un errore o un errore, o un modo per rompere, per favore avvisare me in modo che possa risolvere il problema.");
+            bot.sendMessage(msg.chat.id, "\/aiutami - invia questo messaggio.\n\n\/ita - traduce il testo in italiano\n\/ing - traduce il testo in inglese\n\/spa - traduce il testo in spagnolo\n\/fra - traduce il testo in francese\n\nBot fatto da @Bestulo. Se si nota un bug o un errore per favore avvisatemi in modo che lo possa risolvere.");
         }
     }
 });
