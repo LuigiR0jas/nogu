@@ -1,15 +1,10 @@
 'use strict';
-const _ = require('underscore');
-const token = "273509825:AAEoibz-8BTdv6UAMMzDIL_9XME6fHMCYbA";
+const token = process.env.TOKEN;
 const Tgfancy = require('tgfancy');
 const bot = new Tgfancy(token, { polling: true });
-// HTTP modules
 const request = require('request');
-const cheerio = require('cheerio');
-const fs = require('fs');
-const translate = require('node-google-translate-skidz');
 
-function botAPI (...args) { //method, object, cb
+function botAPI (...args) { //method, object(optional), cb(optional)
     const methodName = args.shift();
     const callback = (typeof args[args.length - 1] === 'function') ? args.pop() : null;
     const object = (args.length > 0) ? args.shift() : null;
@@ -19,7 +14,6 @@ function botAPI (...args) { //method, object, cb
         let methodArr = [];
         for (let key in object){
             if (!object.hasOwnProperty(key)) continue;
-            if (key === 0) {method += `${key}=${object[key]}`; continue;}
             methodArr.push(`${key}=${object[key]}`);
         }
         method += methodArr.join("&");
