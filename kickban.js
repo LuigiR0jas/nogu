@@ -36,7 +36,6 @@ bot.onText(/^\/kick|^\/ban/, msg => {
         botAPI("kickChatMember", {chat_id: msg.chat.id, user_id: user.id}, result => {
             if (result.ok === false) {
                 bot.sendMessage(msg.chat.id, "I cannot kick that member.");
-                console.log(result);
             } else {
                 if (msg.text.startsWith("\/kick")) {
                     botAPI("unbanChatMember", {chat_id: msg.chat.id, user_id: user.id}, () => {
@@ -55,7 +54,6 @@ bot.onText(/^\/kick|^\/ban/, msg => {
                     }
                     report(msg, text);
                 }
-                console.log(result);
             }
         });
     }
