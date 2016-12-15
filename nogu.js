@@ -43,9 +43,10 @@ const Sonnet = mongoose.model('Sonnet', sonnetSchema);
 bot.onText(/#([^\s]+)/g, (msg) => {
     if (msg.reply_to_message && !msg.text.startsWith("\/")) {
         if (msg.reply_to_message.sticker) {
-            var hashtags = msg.text.match(/#([^\s]+)/g);
-            var tags = [];
-            var nottags = [];
+            let hashtags, tags, nottags;
+            hashtags = msg.text.match(/#([^\s]+)/g);
+            tags = [];
+            nottags = [];
             hashtags.forEach(function (x) {
                 if (x.substring(1).indexOf("#") === -1) {
                     tags.push(x.substring(1));
@@ -64,11 +65,12 @@ bot.onText(/^\/addtags(?=\s)|\/addtags@\w+/, (msg) => {
     if (msg.reply_to_message) {
         if (msg.entities) {
             if (msg.entities[0].type == 'bot_command') {
-                var command = msg.text.substring(msg.text.search("\/"), msg.text.search(" "));
-                var args = msg.text.substring(command.length + 1);
-                var hashtags = args.match(/[^\s]+/g);
-                var tags = [];
-                var nottags = [];
+                let command, args, hashtags, tags, nottags;
+                command = msg.text.substring(msg.text.search("\/"), msg.text.search(" "));
+                args = msg.text.substring(command.length + 1);
+                hashtags = args.match(/[^\s]+/g);
+                tags = [];
+                nottags = [];
                 hashtags.forEach(function (x) {
                     if (x.startsWith("#")) {
                         if (x.substring(1).indexOf("#") === -1) {
@@ -88,18 +90,19 @@ bot.onText(/^\/addtags(?=\s)|\/addtags@\w+/, (msg) => {
 });
 
 // Tag saver
-var tagSaver = function(msg, tags, nottags) {
+const tagSaver = function(msg, tags, nottags) {
     Sticker.find({tags: {$in: tags}, stickerId: msg.reply_to_message.sticker.file_id}, function (err, result) {
-        var text = '';
+        let text = '';
         if (err) {
             console.log(err);
         } else {
+            let duplicates, dupes, taggies, noties;
             if (result[0] !== undefined) {
-                var duplicates = _.intersection(tags, result[0].tags);
+                duplicates = _.intersection(tags, result[0].tags);
                 tags = _.difference(tags, result[0].tags);
-                var dupes = duplicates.join(", ");
-                var taggies = tags.join(", ");
-                var noties = nottags.join(", ");
+                dupes = duplicates.join(", ");
+                taggies = tags.join(", ");
+                noties = nottags.join(", ");
                 if (tags.length !== 0) {
                     text += "I'm adding the following tags: " + taggies + "\nI found some duplicates: " + dupes;
                 } else {
@@ -136,9 +139,8 @@ var tagSaver = function(msg, tags, nottags) {
 
 // Get #tags inline and show
 bot.on('inline_query', function (msg) {
-    var hashtags = msg.query.split(' ');
-    var tags = [];
-    var nottags = [];
+    let hashtags, tags = [], nottags = [];
+    hashtags = msg.query.split(' ');
     hashtags.forEach(function (x) {
         if (x.startsWith("#")) {
             if (x.substring(1).indexOf("#") === -1) {
@@ -154,16 +156,15 @@ bot.on('inline_query', function (msg) {
         if (err) {
             console.log(err);
         } else {
-            var stickerIds = [];
-            var finalResults = [];
-            for (var f = 0;f<result.length;f++){
-                if (tags.length <= _.intersection(result[f].tags, tags).length) {
-                    finalResults.push(result[f]);
+            let stickerIds = [], finalResults = [];
+            for (let i = 0;i<result.length;i++){
+                if (tags.length <= _.intersection(result[i].tags, tags).length) {
+                    finalResults.push(result[i]);
                 }
             }
             result = finalResults;
-            for (var d = 0; d < result.length; d++) {
-                stickerIds.push(result[d].stickerId);
+            for (let i = 0; i < result.length; i++) {
+                stickerIds.push(result[i].stickerId);
             }
             if (err) {
                 console.log(err);
@@ -175,13 +176,14 @@ bot.on('inline_query', function (msg) {
                 }]);
             } else if (result[0] !== undefined) {
                 if (result[0].stickerId !== undefined) {
-                    var resultArr = [];
-                    for (var e = 0; e < result.length; e++) {
-                        resultArr.push(result[e].stickerId);
+                    let resultArr, uniqResults, myArr;
+                    resultArr = [];
+                    for (let i = 0; i < result.length; i++) {
+                        resultArr.push(result[i].stickerId);
                     }
-                    var uniqResults = _.uniq(resultArr);
-                    var myArr = [];
-                    for (var i = 0; i < uniqResults.length; i++) {
+                    uniqResults = _.uniq(resultArr);
+                    myArr = [];
+                    for (let i = 0; i < uniqResults.length; i++) {
                         myArr.push({
                             type: 'sticker',
                             id: String(i),
@@ -200,9 +202,10 @@ bot.on('inline_query', function (msg) {
 bot.on('message', function (msg) {
     if (msg.entities) {
         if (msg.entities[0].type == 'bot_command' && msg.text.startsWith('\/delsticker')) {
-            var command = msg.text.substring(msg.text.search("\/"), msg.text.search(" "));
-            var keyword = msg.text.substring(command.length + 1, msg.text.length);
-            var kw = [];
+            let command, keyword, kw;
+            command = msg.text.substring(msg.text.search("\/"), msg.text.search(" "));
+            keyword = msg.text.substring(command.length + 1, msg.text.length);
+            kw = [];
             if (keyword.length <= 50 && keyword.substring(0, 1) == '!') {
                 kw.push(msg.text.substring(msg.text.search("!") + 1));
                 Sticker.find({stickerKeyword: kw[0], userId: msg.from.id}).remove().exec();
@@ -217,8 +220,8 @@ bot.on('message', function (msg) {
     if (msg.entities) {
         if (msg.entities[0].type == 'bot_command' && msg.text.startsWith('\/mystickers')) {
             Sticker.find({userId: msg.from.id}, function (err, result) {
-                var text ="";
-                var i;
+                let text ="";
+                let i;
                 for (i = 0; i<result.length; i++) {
                     text += "*!*" + result[i].stickerKeyword + " ";
                 }
@@ -233,7 +236,7 @@ bot.on('message', function (msg) {
     if (msg.entities) {
         if (msg.entities[0].type == 'bot_command' && msg.text.startsWith('\/sonnet')) {
             console.log('Action log: Sent a sonnet');
-            var text = msg.text.substring(msg.entities[0].length + 1);
+            let text = msg.text.substring(msg.entities[0].length + 1);
             Sonnet.find({sonnetId: text}, (err, result) => {
                 if (err) {
                     console.log(err);
@@ -256,16 +259,17 @@ bot.on('message', function (msg) {
 bot.on('message', function(msg) {
     if (msg.entities) {
         if (msg.entities[0].type == 'bot_command' && msg.text.startsWith('\/trans')) {
-            var arg = msg.text.substring(msg.entities[0].length + 1);
-            var langA = arg.substring(0, 2);
-            var langB = arg.substring(2, 4);
-            var text = arg.substring(msg.text.lastIndexOf(msg.entities[0].length) + 6);
+            let arg, langA, langB, text;
+            arg = msg.text.substring(msg.entities[0].length + 1);
+            langA = arg.substring(0, 2);
+            langB = arg.substring(2, 4);
+            text = arg.substring(msg.text.lastIndexOf(msg.entities[0].length) + 6);
             translate({
                 text: text,
                 source: langA,
                 target: langB
             }, function(result) {
-                var trans = result.sentences.map(function(resu) {
+                let trans = result.sentences.map(function(resu) {
                     return resu.trans;
                 }).join('');
                 bot.sendMessage(msg.chat.id, 'Nogu: ' + trans);
@@ -289,11 +293,12 @@ bot.on('message', function (msg) {
         if (msg.entities[0].type == 'bot_command' && (msg.text.startsWith('\/dolar') || msg.text.startsWith('\/euro'))) {
             request('https://twitter.com/DolarToday', function (error, response, html) {
                 if (!error && response.statusCode == 200) {
-                    var loadedHTML = cheerio.load(html);
-                    var contentContainer = loadedHTML('p.ProfileHeaderCard-bio').text();
+                    let loadedHTML, contentContainer, currency, soughtContent;
+                    loadedHTML = cheerio.load(html);
+                    contentContainer = loadedHTML('p.ProfileHeaderCard-bio').text();
                     if (msg.text.startsWith('\/dolar')) {
-                        var currency = "$";
-                        var soughtContent = contentContainer.substring(contentContainer.indexOf("Bs."), contentContainer.indexOf(" y el"));
+                        currency = "$";
+                        soughtContent = contentContainer.substring(contentContainer.indexOf("Bs."), contentContainer.indexOf(" y el"));
                     } else if (msg.text.startsWith('\/euro')) {
                         currency = "€";
                         soughtContent = contentContainer.substring(contentContainer.lastIndexOf("Bs."), contentContainer.indexOf(" entra"));
@@ -314,28 +319,28 @@ bot.on('message', function (msg) {
     if (msg.entities) {
         if (msg.entities[0].type == 'bot_command' && msg.text.startsWith('\/dq1')) {
             console.log('Action log: Sent a message');
-            var text = msg.text.substring(msg.entities[0].length + 1);
+            let text = msg.text.substring(msg.entities[0].length + 1);
             bot.sendMessage('-1001055742276', text, {parse_mode: 'markdown'});
         }
     }
 });
 
 bot.onText(/\/qlq/, function (msg) {
-    var chatId = msg.chat.id;
-    var photo = 'AgADAQAD3qcxGxrvBBB-awk0sDD9Xe6a5y8ABI9yasUBQPX8AAHxAQABAg';
+    let chatId = msg.chat.id;
+    let photo = 'AgADAQAD3qcxGxrvBBB-awk0sDD9Xe6a5y8ABI9yasUBQPX8AAHxAQABAg';
     return bot.sendPhoto(chatId, photo, { caption: 'qlq menol' });
 });
 
 bot.onText(/\/pajuo/, function (msg) {
-    var chatId = msg.chat.id;
-    var photo = 'AgADAQADK74xG8WGLA4Qaex4hp-Lt-OR5y8ABKd4zcJq3RFSjuwBAAEC';
+    let chatId = msg.chat.id;
+    let photo = 'AgADAQADK74xG8WGLA4Qaex4hp-Lt-OR5y8ABKd4zcJq3RFSjuwBAAEC';
     bot.sendPhoto(chatId, photo, { caption: 'qlq menol' });
 });
 
 bot.on('message', function (msg) {
     if (msg.entities) {
         if (msg.entities[0].type == 'bot_command' && (msg.text == '\/doge' || msg.text.startsWith('\/doge@'))) {
-            var cualDoge = [
+            let cualDoge = [
                 'BQADAQADmwIAAmczbQpYL0n24ELb8wI',
                 'BQADBAADiwEAAljp-gOQagmTpQABMr8C',
                 'BQADAgADTwADNraOCO6Evpsh_B78Ag',
@@ -349,7 +354,7 @@ bot.on('message', function (msg) {
                 'BQADBAADmQEAAljp-gMzkzYmzu3eyAI',
                 'BQADBAADfQEAAljp-gORGeHcXUkb-wI'
             ];
-            var elDoge = cualDoge[Math.floor(Math.random() * 12)];
+            let elDoge = cualDoge[Math.floor(Math.random() * 12)];
             bot.sendSticker(msg.chat.id, elDoge);
         }
     }
@@ -359,21 +364,24 @@ bot.on('message', function (msg) {
     if (msg.entities) {
         if (msg.entities[0].type == 'bot_command' && msg.text.startsWith('\/repite')) {
             console.log('Action log: Repeated a message');
-            var text = msg.text.substring(msg.entities[0].length + 1);
+            let text = msg.text.substring(msg.entities[0].length + 1);
             bot.sendMessage(msg.chat.id, text, {parse_mode: 'markdown'});
         }
     }
 });
 
 bot.on('message', function (msg){
+    if (msg.chat.id === -1001043923041) {
+        bot.forwardMessage(-1001061124982, -1001043923041, msg.message_id);
+    }
     if (msg.text !== undefined) {
         console.log('FN: ' + msg.from.first_name + " " + "UN: @" + msg.from.username + ': ' + msg.text);
     } else if (msg.sticker) {
-        var sticker = msg.sticker.file_id;
+        let sticker = msg.sticker.file_id;
         console.log('FN: ' + msg.from.first_name + " " + "UN: @" + msg.from.username + ' Sticker: ' + sticker);
         bot.sendSticker('-1001054003138}', sticker);
     } else if (msg.photo || msg.document) {
-        var text = '';
+        let text = '', text2;
         if (msg.chat.title !== undefined) {
             text += 'Sent by: ' + msg.from.first_name + ' ( @' + msg.from.username + ' )' + '\nChat: ' + msg.chat.title + ' (' + msg.chat.id + ')';
         } else {
@@ -382,7 +390,7 @@ bot.on('message', function (msg){
         if (msg.caption) {
             text += '\nOriginal caption: ' + msg.caption;
             if (text.length > 200) {
-                var text2 = text.substr(200);
+                text2 = text.substr(200);
             }
         }
         if (msg.photo) {
@@ -413,7 +421,7 @@ bot.on('message', function (msg){
     } else if (msg.new_chat_participant) {
         if (msg.new_chat_participant.id == 229219920) {
             console.log('I was just added to a new group');
-            text = '';
+            let text = '';
             text += `I have joined a new group!\nChat ID: *${msg.chat.id}* \nChat title: *${msg.chat.title}* \nChat type:  *${msg.chat.type}*`;
             if (msg.chat.username) {
                 text += `\nPublic chat username: @${msg.chat.username}`;
