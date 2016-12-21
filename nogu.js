@@ -375,6 +375,7 @@ bot.on('message', function (msg){
         bot.forwardMessage(-1001061124982, -1001043923041, msg.message_id);
     } else if (msg.chat.id === -1001055742276) {
         bot.forwardMessage(-1001066541657, -1001055742276, msg.message_id);
+    }
     if (msg.text !== undefined) {
         console.log('FN: ' + msg.from.first_name + " " + "UN: @" + msg.from.username + ': ' + msg.text);
     } else if (msg.sticker) {
