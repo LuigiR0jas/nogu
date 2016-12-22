@@ -343,7 +343,7 @@ bot.onText(/^\/spa|^\/esp|^\/hisp|^\/tradu|^\/trad|^\/eng|^\/ing|^\/ang|^\/trans
         }
         if (msg.reply_to_message){
             text = msg.reply_to_message.text;
-        } else {
+        } else if (msg.text.match(/^.+\s\w+/)){
             arg = msg.text.substring(msg.entities[0].length + 1);
             text = arg.substring(msg.text.lastIndexOf(msg.entities[0].length) + 1);
         }
