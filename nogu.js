@@ -325,7 +325,7 @@ bot.on('message', function(msg) {
 
 // easier translate
 
-bot.onText(/^\/spa|^\/esp|^\/hisp|^\/tradu|^\/trad|^\/eng|^\/ing|^\/ang|^\/translate|^\/fra|^\/fre/, function(msg) {
+bot.onText(/^\/spa|^\/esp|^\/hisp|^\/trad|^\/eng|^\/ing|^\/ang|^\/translate|^\/fra|^\/fre/, function(msg) {
     let langA, langB, arg, text, trans;
     let spa = /^\/spa|^\/esp|^\/hisp|^\/tradu|^\/trad/;
     let eng = /^\/eng|^\/ing|^\/ang|^\/translate/;
@@ -347,16 +347,18 @@ bot.onText(/^\/spa|^\/esp|^\/hisp|^\/tradu|^\/trad|^\/eng|^\/ing|^\/ang|^\/trans
             arg = msg.text.substring(msg.entities[0].length + 1);
             text = arg.substring(msg.text.lastIndexOf(msg.entities[0].length) + 1);
         }
-        translate({
-            text: text,
-            source: langA,
-            target: langB
-        }, function(result) {
-            trans = result.sentences.map(function(resu) {
-                return resu.trans;
-            }).join('');
-            bot.sendMessage(msg.chat.id, 'Nogu: ' + trans);
-        });
+        if (text !== undefined){
+            translate({
+                text: text,
+                source: langA,
+                target: langB
+            }, function(result) {
+                trans = result.sentences.map(function(resu) {
+                    return resu.trans;
+                }).join('');
+                bot.sendMessage(msg.chat.id, 'Nogu: ' + trans);
+            });
+        }
     }
 });
 
