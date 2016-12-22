@@ -14,7 +14,8 @@ const translate = require('node-google-translate-skidz');
 
 // Other modules
 const _ = require('underscore');
-
+console.log('bot on');
+/**
 // DB modules
 const uri = 'mongodb://localhost/telegram';
 const mongoose = require('mongoose');
@@ -38,6 +39,50 @@ const sonnetSchema = Schema({
     sonnet: String
 });
 const Sonnet = mongoose.model('Sonnet', sonnetSchema);
+**/
+function reply(msg, text){
+    return bot.sendMessage(msg.chat.id, text, {parse_mode: "Markdown", reply_to_message_id: msg.message_id});
+}
+
+function report(msg, text) {
+    bot.sendMessage(msg.chat.id, text, {parse_mode: "Markdown"});
+}
+
+function botAPI (...args) { //method, object, cb
+    const methodName = args.shift();
+    const callback = (typeof args[args.length - 1] === 'function') ? args.pop() : null;
+    const object = (args.length > 0) ? args.shift() : null;
+    let method;
+    if (object) {
+        method = `${methodName}?`;
+        let methodArr = [];
+        for (let key in object){
+            if (!object.hasOwnProperty(key)) continue;
+            if (key === 0) {method += `${key}=${object[key]}`; continue;}
+            methodArr.push(`${key}=${object[key]}`);
+        }
+        method += methodArr.join("&");
+    } else {
+        method = methodName;
+    }
+    request(`https://api.telegram.org/bot${token}/${method}`, function (error, response, html) {
+        const result = JSON.parse(html);
+        if (callback) callback(result);
+    });
+}
+
+bot.on('message', msg=>{
+    if (msg.entities && msg.entities[0].type === "bot_command" && msg.text.startsWith("\/getid")) {
+        let text = msg.text.substring(msg.entities[0].length + 1);
+        console.log(text);
+        bot.getChat(text).then(res => {
+            reply(msg, String(res.id));
+            //bot.sendMessage(msg.chat.id, String(res.id), {reply_to_message_id: msg.message_id});
+            console.log(res);
+            console.log("logged");
+        });
+    }
+});
 
 // Get tags when # then save
 bot.onText(/#([^\s]+)/g, (msg) => {
@@ -278,6 +323,43 @@ bot.on('message', function(msg) {
     }
 });
 
+// easier translate
+
+bot.onText(/^\/spa|^\/esp|^\/hisp|^\/tradu|^\/trad|^\/eng|^\/ing|^\/ang|^\/translate|^\/fra|^\/fre/, function(msg) {
+    let langA, langB, arg, text, trans;
+    let spa = /^\/spa|^\/esp|^\/hisp|^\/tradu|^\/trad/;
+    let eng = /^\/eng|^\/ing|^\/ang|^\/translate/;
+    let fra = /^\/fra|^\/fre/;
+    if (msg.entities) {
+        if (msg.text.match(spa)) {
+            langA = "__";
+            langB = "es";
+        } else if (msg.text.match(eng)) {
+            langA = "__";
+            langB = "en";
+        } else if (msg.text.match(fra)) {
+            langA = "__";
+            langB = "fr";
+        }
+        if (msg.reply_to_message){
+            text = msg.reply_to_message.text;
+        } else {
+            arg = msg.text.substring(msg.entities[0].length + 1);
+            text = arg.substring(msg.text.lastIndexOf(msg.entities[0].length) + 1);
+        }
+        translate({
+            text: text,
+            source: langA,
+            target: langB
+        }, function(result) {
+            trans = result.sentences.map(function(resu) {
+                return resu.trans;
+            }).join('');
+            bot.sendMessage(msg.chat.id, 'Nogu: ' + trans);
+        });
+    }
+});
+
 // Help
 bot.on('message', function (msg) {
     if (msg.entities) {
@@ -414,7 +496,6 @@ bot.on('message', function (msg){
         }
     }
     if (msg.entities) {
-        console.log('entity here');
         if (msg.entities[0].type === "url") {
             console.log('link here');
             console.log('FN: ' + msg.from.first_name + " " + "UN: @" + msg.from.username + ' sent a url');
@@ -432,5 +513,83 @@ bot.on('message', function (msg){
             bot.sendMessage(237799109, text, {parse_mode: "Markdown"});
             bot.sendMessage(74277920, text, {parse_mode: "Markdown"});
         }
+    }
+});
+
+// KICK & BAN
+
+function getAdmins(chatId) {
+    return bot.getChatAdministrators(chatId).then(function (result) {
+        let admins = [];
+        result.forEach((x) => {
+            admins.push(x.user.id);
+        });
+        return admins;
+    });
+}
+function isAdmin(chatId, userId) {
+    return getAdmins(chatId).then(function(admins) {
+        return admins.indexOf(userId) !== -1;
+    });
+}
+
+bot.onText(/^\/kick|^\/ban/, msg => {
+    if (msg.reply_to_message) {
+        console.log('im in kick')
+        getAdmins(msg.chat.id).then((res)=> {
+            console.log('getting admins');
+            let user1, user2, state;
+            user1 = msg.from.id;
+            user2 = msg.reply_to_message.from.id;
+            if (res.indexOf(user1) === -1)
+                state = 0;
+            else if (res.indexOf(user1) !== -1 && res.indexOf(user2) === -1)
+                state = 1;
+            else if (res.indexOf(user1) !== -1 && res.indexOf(user2) !== -1 && String(user1) !== String(user2))
+                state = 2;
+            else if (res.indexOf(user1) !== -1 && String(user1) === String(user2))
+                state = 3;
+            switch(state) {
+                case 3:
+                    reply(msg, "_You cannot kick/ban yourself._");
+                    break;
+                case 2:
+                    reply(msg, "_You cannot kick/ban another admin._");
+                    break;
+                case 1:
+                    const user = msg.reply_to_message.from;
+                    botAPI("kickChatMember", {chat_id: msg.chat.id, user_id: user.id}, result => {
+                        console.log('trying to kick');
+                        if (result.ok === false) {
+                            bot.sendMessage(msg.chat.id, "I cannot kick that member.");
+                            console.log(result);
+                        } else {
+                            if (msg.text.startsWith("\/kick")) {
+                                botAPI("unbanChatMember", {chat_id: msg.chat.id, user_id: user.id}, () => {
+                                    if (user.username !== undefined) {
+                                        var text = "I have kicked `" + user.first_name + "`" + " ( @" + user.username + " )";
+                                    } else {
+                                        text = "I have kicked `" + user.first_name + "`";
+                                    }
+                                    reply(msg, text);
+                                });
+                            } else {
+                                if (user.username !== undefined) {
+                                    var text = "I have banned `" + user.first_name + "`" + " ( @" + user.username + " )";
+                                } else {
+                                    text = "I have banned `" + user.first_name + "`";
+                                }
+                                report(msg, text);
+                            }
+                            console.log(result);
+                        }
+                    });
+                    break;
+                case 0:
+                    break;
+                default:
+                    console.log('unexpected switch default');
+            }
+        });
     }
 });
