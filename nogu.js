@@ -303,7 +303,7 @@ bot.on('message', function (msg) {
 // Google Translate
 bot.on('message', function(msg) {
     if (msg.entities) {
-        if (msg.entities[0].type == 'bot_command' && msg.text.startsWith('\/trans')) {
+        if (msg.entities[0].type == 'bot_command' && msg.text.match(/^\/trans\s|^\/trans@/)) {
             let arg, langA, langB, text;
             arg = msg.text.substring(msg.entities[0].length + 1);
             langA = arg.substring(0, 2);
