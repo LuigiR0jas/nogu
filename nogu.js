@@ -287,12 +287,12 @@ function sonnet(msg) {
 // Google Translate
 function tra1(msg) {
     let arg, langA, langB, text;
-    if (msg.text.match(/^\/[^\s]+\s.{6,}/)) {
+    if (msg.text.match(/^\/[^\s]+\s\w{4}\s.+/)) {
         arg = msg.text.substring(msg.entities[0].length + 1);
         langA = arg.substring(0, 2);
         langB = arg.substring(2, 4);
         text = arg.substring(msg.text.lastIndexOf(msg.entities[0].length) + 6);
-    } else if (msg.text.match(/^\/[^\s]+\s.{0,5}$/)){
+    } else if (msg.text.match(/^\/[^\s]+\s.{0,5}$|[^\s]+.{5,}$/)){
         reply(msg, "For `\/trans` to work, you need *four* (4) language letters (example: `\/trans` *enes* text) and a _text_ (example: `\/trans` enes *text*)");
         return;
     } else {
