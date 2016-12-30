@@ -4,7 +4,7 @@
 const fs = require('fs');
 const secrets = fs.readFileSync("secrets.json");
 const vars = JSON.parse(secrets);
-const token = vars.test_token;
+const token = vars.token;
 const Tgfancy = require('tgfancy');
 const bot = new Tgfancy(token, { polling: true });
 
