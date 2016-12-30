@@ -1,16 +1,27 @@
 'use strict';
 
 // Bot modules
-const token = process.env.TOKEN;
-
+const fs = require('fs');
+const secrets = fs.readFileSync("secrets.json");
+const vars = JSON.parse(secrets);
+const token = vars.test_token;
 const Tgfancy = require('tgfancy');
 const bot = new Tgfancy(token, { polling: true });
 
 // HTTP modules
 const request = require('request');
 const cheerio = require('cheerio');
-const fs = require('fs');
 const translate = require('node-google-translate-skidz');
+
+//Twitter module
+//
+const Twitter = require('twitter');
+const tuser = new Twitter({
+    consumer_key: vars.consumer_key,
+    consumer_secret: vars.consumer_secret,
+    access_token_key: vars.access_token_key,
+    access_token_secret: vars.access_token_secret
+});
 
 // Other modules
 const _ = require('underscore');
@@ -39,7 +50,6 @@ const sonnetSchema = Schema({
     sonnet: String
 });
 const Sonnet = mongoose.model('Sonnet', sonnetSchema);
-
 
 bot.onText(/^\//, msg => {
     if (msg.text.match(/^\/kick|^\/ban/) && msg.reply_to_message)
@@ -359,23 +369,21 @@ function help() {
 }
 
 //Dollar & Euro stuff
-function currency(msg) {
-    request('https://twitter.com/DolarToday', function (error, response, html) {
-        if (!error && response.statusCode == 200) {
-            let loadedHTML, contentContainer, currency, soughtContent;
-            loadedHTML = cheerio.load(html);
-            contentContainer = loadedHTML('p.ProfileHeaderCard-bio').text();
+
+function currency(msg){
+    tuser.get('users/show', {screen_name:'DolarToday'},(err, req)=>{
+        let currency, value, bio = req.description;
+        if (err) console.log(err);
+        else {
             if (msg.text.startsWith('\/dolar') || msg.text.startsWith('\/dollar')) {
                 currency = "$";
-                soughtContent = contentContainer.substring(contentContainer.indexOf("Bs."), contentContainer.indexOf(" y el"));
+                value = bio.substring(bio.indexOf("Bs."), bio.indexOf(" y el"));
             } else if (msg.text.startsWith('\/euro')) {
                 currency = "€";
-                soughtContent = contentContainer.substring(contentContainer.lastIndexOf("Bs."), contentContainer.indexOf(" entra"));
+                value = bio.substring(bio.lastIndexOf("Bs."), bio.indexOf(" entra"));
             }
-            bot.sendMessage(msg.chat.id, currency + "1 = " + soughtContent);
+            bot.sendMessage(msg.chat.id, currency + '1 = ' + value);
             console.log('Sent ' + currency + ' value');
-        } else {
-            console.log(error);
         }
     });
 }
