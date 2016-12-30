@@ -59,7 +59,7 @@ bot.onText(/^\//, msg => {
         help(msg);
     else if(msg.text.match(/^\/spa|^\/esp|^\/hisp|^\/trad|^\/eng|^\/ing|^\/ang|^\/translate|^\/fra|^\/fre/))
         tra2(msg);
-    else if(msg.text.match(/^\/trans\s|^\/trans@/))
+    else if(msg.text.match(/^\/trans|^\/trans@/))
         tra1(msg);
     else if(msg.text.match(/^\/sonnet\s[0-9]+$/))
         sonnet(msg);
@@ -359,7 +359,7 @@ function tra2(msg) {
 }
 
 // Help
-function help() {
+function help(msg) {
     bot.sendMessage(msg.chat.id, "\/help - Sends this message.\r\n\r\n\/repite <text> - Repeats the text\r\n\r\n\/dolar - Checks the current exchange value of the Dollar\r\n\/euro - Checks the current exchange value of the Euro\r\n\r\n\/doge - Sends random doge from 12 doges\r\n\r\n\/trans <l1l2> <texto> - Translates the text from language 1 (l1) to language 2 (l2) on Google Translate. If you want to translate with \/trans, You must place the two letters that represent each language in this format: l1l2 (for example, to translate from Spanish to English, write esen)\r\n\r\nExamples of combinations:\r\nende = English to German\r\neozh = Esperanto to Chinese\r\nsves = Swedish to Spanish\r\nptit = Portuguese to Italian\r\n\r\nUsage example:\r\n\/trans enes Languages are cool.\r\n\r\nBot made by @Bestulo. If you notice a mistake or an error, or a way to break it, please notice me so that I can fix it.");
 }
 
