@@ -66,7 +66,7 @@ bot.onText(/^\//, msg => {
         tra2(msg);
     else if(msg.text.match(/^\/trans\s|^\/trans@/))
         tra1(msg);
-    else if(msg.text.match(/^\/sonnet\s[1-9]+$/))
+    else if(msg.text.match(/^\/sonnet\s[0-9]+$/))
         sonnet(msg);
     else if(msg.text.match(/^\/dolar|^\/dollar|^\/euro/))
         currency(msg);
