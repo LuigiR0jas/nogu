@@ -4,7 +4,7 @@
 const fs = require('fs');
 const secrets = fs.readFileSync("secrets.json");
 const vars = JSON.parse(secrets);
-const token = vars.token;
+const token = vars.test_token;
 const Tgfancy = require('tgfancy');
 const bot = new Tgfancy(token, { polling: true });
 
@@ -14,7 +14,6 @@ const cheerio = require('cheerio');
 const translate = require('node-google-translate-skidz');
 
 //Twitter module
-//
 const Twitter = require('twitter');
 const tuser = new Twitter({
     consumer_key: vars.consumer_key,
