@@ -1,54 +1,50 @@
 'use strict';
 
 // Bot modules
-const fs = require('fs');
-const secrets = fs.readFileSync("secrets.json");
-const vars = JSON.parse(secrets);
-const token = vars.token;
-const Tgfancy = require('tgfancy');
-const bot = new Tgfancy(token, { polling: true });
-
+const fs = require('fs'),
+    secrets = fs.readFileSync("secrets.json"),
+    vars = JSON.parse(secrets),
+    token = vars.token,
+    Tgfancy = require('tgfancy'),
+    bot = new Tgfancy(token, { polling: true }),
 // HTTP modules
-const request = require('request');
-const cheerio = require('cheerio');
-const translate = require('node-google-translate-skidz');
-
+    request = require('request'),
+    translate = require('node-google-translate-skidz'),
 //Twitter module
-const Twitter = require('twitter');
-const tuser = new Twitter({
-    consumer_key: vars.consumer_key,
-    consumer_secret: vars.consumer_secret,
-    access_token_key: vars.access_token_key,
-    access_token_secret: vars.access_token_secret
-});
-
+    Twitter = require('twitter'),
+    tuser = new Twitter({
+        consumer_key: vars.consumer_key,
+        consumer_secret: vars.consumer_secret,
+        access_token_key: vars.access_token_key,
+        access_token_secret: vars.access_token_secret
+    }),
 // Other modules
-const _ = require('underscore');
-console.log('bot on');
-
+    _ = require('underscore'),
 // DB modules
-const uri = 'mongodb://localhost/telegram';
-const mongoose = require('mongoose');
+    uri = 'mongodb://localhost/telegram',
+    mongoose = require('mongoose');
+
 mongoose.Promise = global.Promise;
 mongoose.connect(uri);
 
 // Mongoose requirements
-const Schema = mongoose.Schema;
+const Schema = mongoose.Schema,
+    stickerSchema = Schema({
+        stickerKeyword: String,
+        stickerId: String,
+        userId: Number,
+        userName: String,
+        tags: Array
+    }),
+    Sticker = mongoose.model('Sticker', stickerSchema),
 
-const stickerSchema = Schema({
-    stickerKeyword: String,
-    stickerId: String,
-    userId: Number,
-    userName: String,
-    tags: Array
-});
-const Sticker = mongoose.model('Sticker', stickerSchema);
+    sonnetSchema = Schema({
+        sonnetId: Number,
+        sonnet: String
+    }),
+    Sonnet = mongoose.model('Sonnet', sonnetSchema);
 
-const sonnetSchema = Schema({
-    sonnetId: Number,
-    sonnet: String
-});
-const Sonnet = mongoose.model('Sonnet', sonnetSchema);
+console.log('bot on');
 
 bot.onText(/^\//, msg => {
     if (msg.text.match(/^\/kick|^\/ban/) && msg.reply_to_message)
@@ -102,9 +98,9 @@ function getId(msg) {
 }
 
 function botAPI (...args) { //method, object, cb
-    const methodName = args.shift();
-    const callback = (typeof args[args.length - 1] === 'function') ? args.pop() : null;
-    const object = (args.length > 0) ? args.shift() : null;
+    const methodName = args.shift(),
+        callback = (typeof args[args.length - 1] === 'function') ? args.pop() : null,
+        object = (args.length > 0) ? args.shift() : null;
     let method;
     if (object) {
         method = `${methodName}?`;
@@ -202,7 +198,7 @@ const tagSaver = function(msg, tags, nottags) {
                 Sticker.update({stickerId: msg.reply_to_message.sticker.file_id}, {$push: {tags: {$each: tags}}}, {
                     upsert: true,
                     new: true
-                }, function (err, result) {
+                }, function (err) {
                     if (err) {
                         console.log(err);
                     }
@@ -502,10 +498,11 @@ function kick(msg) {
                     if (result.ok === false) {
                         bot.sendMessage(msg.chat.id, "I cannot kick that member.");
                     } else {
+                        let text;
                         if (msg.text.startsWith("\/kick")) {
                             botAPI("unbanChatMember", {chat_id: msg.chat.id, user_id: user.id}, () => {
                                 if (user.username !== undefined) {
-                                    var text = "I have kicked `" + user.first_name + "`" + " ( @" + user.username + " )";
+                                    text = "I have kicked `" + user.first_name + "`" + " ( @" + user.username + " )";
                                 } else {
                                     text = "I have kicked `" + user.first_name + "`";
                                 }
@@ -513,7 +510,7 @@ function kick(msg) {
                             });
                         } else {
                             if (user.username !== undefined) {
-                                var text = "I have banned `" + user.first_name + "`" + " ( @" + user.username + " )";
+                                text = "I have banned `" + user.first_name + "`" + " ( @" + user.username + " )";
                             } else {
                                 text = "I have banned `" + user.first_name + "`";
                             }
