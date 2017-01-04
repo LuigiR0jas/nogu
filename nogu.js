@@ -10,6 +10,7 @@ const fs = require('fs'),
 // HTTP modules
     request = require('request'),
     translate = require('node-google-translate-skidz'),
+    cheerio = require('cheerio'),
 //Twitter module
     Twitter = require('twitter'),
     tuser = new Twitter({
@@ -526,3 +527,36 @@ function kick(msg) {
         }
     });
 }
+
+bot.onText(/^\/pickupline(@\w+)?$/, msg=>{
+    request.get('http://www.pickuplinegen.com/', (err, res, html)=>{
+        let $ = cheerio.load(html);
+        let text = $('#content').text();
+        bot.sendMessage(msg.chat.id, text);
+        if(err){
+            bot.sendMessage(msg.chat.id, "There was an error retrieving the information you requested");
+        }
+    })
+});
+
+bot.onText(/^\/piropo(@\w+)?$/, msg=> {
+    const url = `http://www.tuclubsocial.com/`;
+    phantom.create().then(ph => {
+        _ph = ph;
+        return _ph.createPage();
+    }).then(page => {
+        _page = page;
+        return _page.open(url);
+    }).then(status => {
+        console.log(status);
+        return _page.property('content')
+    }).then(content => {
+        let $ = cheerio.load(content);
+        let text = $('#texto-piropo').text();
+        bot.sendMessage(msg.chat.id, text);
+    }).catch(err => {
+        console.log(err);
+        bot.sendMessage(msg.chat.id, "There was an error retrieving the information you requested");
+    });
+    let _ph, _page, _outObj;
+});
