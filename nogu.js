@@ -541,23 +541,10 @@ bot.onText(/^\/pickupline(@\w+)?$/, msg=>{
 });
 
 bot.onText(/^\/piropo(@\w+)?$/, msg=> {
-    const url = `http://www.tuclubsocial.com/`;
-    phantom.create().then(ph => {
-        _ph = ph;
-        return _ph.createPage();
-    }).then(page => {
-        _page = page;
-        return _page.open(url);
-    }).then(status => {
-        console.log(status);
-        return _page.property('content')
-    }).then(content => {
-        let $ = cheerio.load(content);
-        let text = $('#texto-piropo').text();
-        bot.sendMessage(msg.chat.id, text);
-    }).catch(err => {
-        console.log(err);
-        bot.sendMessage(msg.chat.id, "There was an error retrieving the information you requested");
-    });
-    let _ph, _page, _outObj;
+    request.post('http://www.tuclubsocial.com/getPiropo.php', (err, res, html)=>{
+        bot.sendMessage(msg.chat.id, html);
+            if(err){
+                bot.sendMessage(msg.chat.id, "There was an error retrieving the information you requested");
+            }
+    })
 });
