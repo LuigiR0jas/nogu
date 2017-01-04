@@ -122,6 +122,56 @@ function botAPI (...args) { //method, object, cb
     });
 }
 
+function getPics(userId){
+    let photos = [];
+    return bot.getUserProfilePhotos(userId).then(function(result){
+        if (result.total_count > 0) {
+            result.photos.forEach((x)=>{
+                photos.push(x[0].file_id);
+            });
+            return photos;
+        } else {
+            return photos;
+        }
+    });
+}
+
+bot.on('message', msg=>{
+    if (msg.entities && msg.entities[0].type === "bot_command") {
+        let text;
+        if (msg.text.startsWith("\/getid")) {
+            text = msg.text.substring(msg.entities[0].length + 1);
+            console.log(text);
+            bot.getChat(text).then(res => {
+                reply(msg, String(res.id));
+                //bot.sendMessage(msg.chat.id, String(res.id), {reply_to_message_id: msg.message_id});
+                console.log(res);
+                console.log("logged");
+            });
+        } else if(msg.chat.type === "private" && msg.text.startsWith('\/start getpics ')){
+            let args = msg.text.split(" ");
+            if (args.length === 3) {
+                let username = args[2];
+                bot.getChat(username).then(res=> {
+                    console.log(res);
+                    getPics(String(res.id)).then(pics=> {
+                        console.log("pics are" + pics.join(" "));
+                        pics.forEach(x=>{
+                            bot.sendPhoto(msg.chat.id, x);
+                        })
+                    })
+                })
+            }
+        } else if (msg.chat.type !== "private" && msg.text.startsWith("\/getpics ")) {
+            let username = msg.text.substring(msg.entities[0].length + 1);
+            bot.sendMessage(msg.chat.id, `[click here](https:\/\/telegram.me\/${global.me.username}?start=getpics%20${username})`, {
+                parse_mode: "Markdown",
+                disable_web_page_preview: true,
+                reply_to_message_id: msg.message_id});
+        }
+    }
+});
+
 // Get tags when # then save
 function addTags1(msg) {
     let hashtags, tags, nottags;
