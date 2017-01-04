@@ -46,6 +46,14 @@ const Schema = mongoose.Schema,
     }),
     Sonnet = mongoose.model('Sonnet', sonnetSchema);
 
+bot.getMe().then(res=>{
+    global.me = {
+        id: res.id,
+        name: res.first_name,
+        username: res.username
+    }
+});
+
 console.log('bot on');
 
 bot.onText(/^\//, msg => {
