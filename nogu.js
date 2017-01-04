@@ -11,6 +11,7 @@ const fs = require('fs'),
     request = require('request'),
     translate = require('node-google-translate-skidz'),
     cheerio = require('cheerio'),
+    phantom = require('phantom'),
 //Twitter module
     Twitter = require('twitter'),
     tuser = new Twitter({
