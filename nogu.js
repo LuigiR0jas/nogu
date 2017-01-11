@@ -545,44 +545,69 @@ function kick(msg) {
             state = 2;
         else if (res.indexOf(user1) !== -1 && String(user1) === String(user2))
             state = 3;
-        switch (state) {
-            case 3:
-                reply(msg, "_You cannot kick/ban yourself._");
-                break;
-            case 2:
-                reply(msg, "_You cannot kick/ban another admin._");
-                break;
-            case 1:
-                const user = msg.reply_to_message.from;
-                botAPI("kickChatMember", {chat_id: msg.chat.id, user_id: user.id}, result => {
-                    if (result.ok === false) {
-                        bot.sendMessage(msg.chat.id, "I cannot kick that member.");
-                    } else {
-                        let text;
-                        if (msg.text.startsWith("\/kick")) {
-                            botAPI("unbanChatMember", {chat_id: msg.chat.id, user_id: user.id}, () => {
-                                if (user.username !== undefined) {
-                                    text = "I have kicked `" + user.first_name + "`" + " ( @" + user.username + " )";
-                                } else {
-                                    text = "I have kicked `" + user.first_name + "`";
-                                }
-                                reply(msg, text);
-                            });
-                        } else {
-                            if (user.username !== undefined) {
-                                text = "I have banned `" + user.first_name + "`" + " ( @" + user.username + " )";
-                            } else {
-                                text = "I have banned `" + user.first_name + "`";
-                            }
-                            report(msg, text);
-                        }
-                    }
-                });
-                break;
-            case 0:
-                break;
-            default:
-                console.log('unexpected switch default');
+        switch (user2) {
+          case 174110471:
+              reply(msg, "Vesti is unkickable and unbannable. Armor plot, fagets");
+              break;
+          case 236107528:
+              reply(msg, "Aldo was hugging a doge and didn't notice he was kicked, so he stayed instead");
+              break;
+          case 92204718:
+              reply(msg, "Due to his unending depression, PTJ has become immune to my banhammer powers");
+              break;
+          case 237799109:
+              reply(msg, "I refuse to harm my creator.");
+              break;
+          case 238569200:
+              reply(msg, "Has he even showered? _You_ kick him, I'm not touching him.");
+              break;
+          case 74277920:
+              reply(msg, "He has my family! _Please_ don't make me do this!");
+              break;
+          case 229219920:
+              reply(msg, "I would kick myself, but I don't want to. :)")
+              break;
+          default:
+              switch (state) {
+                  case 3:
+                      reply(msg, "_You cannot kick/ban yourself._");
+                      break;
+                  case 2:
+                      reply(msg, "_You cannot kick/ban another admin._");
+                      break;
+                  case 1:
+                      const user = msg.reply_to_message.from;
+                      botAPI("kickChatMember", {chat_id: msg.chat.id, user_id: user.id}, result => {
+                          if (result.ok === false) {
+                              bot.sendMessage(msg.chat.id, "I cannot kick that member.");
+                          } else {
+                              let text;
+                              if (msg.text.startsWith("\/kick")) {
+                                  botAPI("unbanChatMember", {chat_id: msg.chat.id, user_id: user.id}, () => {
+                                      if (user.username !== undefined) {
+                                          text = "I have kicked `" + user.first_name + "`" + " ( @" + user.username + " )";
+                                      } else {
+                                          text = "I have kicked `" + user.first_name + "`";
+                                      }
+                                      reply(msg, text);
+                                  });
+                              } else {
+                                  if (user.username !== undefined) {
+                                      text = "I have banned `" + user.first_name + "`" + " ( @" + user.username + " )";
+                                  } else {
+                                      text = "I have banned `" + user.first_name + "`";
+                                  }
+                                  report(msg, text);
+                              }
+                          }
+                      });
+                      break;
+                  case 0:
+                      break;
+                  default:
+                      console.log('unexpected switch default');
+              }
+              break;
         }
     });
 }
