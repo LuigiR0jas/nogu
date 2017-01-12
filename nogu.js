@@ -107,6 +107,10 @@ function getId(msg) {
     });
 }
 
+bot.onText(/^\/revy(?:@\w+)$/, msg=>{
+  bot.sendSticker(msg.chat.id, "BQADAQADDwgAAsWGLA7ugW0snffLNwI");
+})
+
 function botAPI (...args) { //method, object, cb
     const methodName = args.shift(),
         callback = (typeof args[args.length - 1] === 'function') ? args.pop() : null,
@@ -147,16 +151,7 @@ function getPics(userId){
 bot.on('message', msg=>{
     if (msg.entities && msg.entities[0].type === "bot_command") {
         let text;
-        if (msg.text.startsWith("\/getid")) {
-            text = msg.text.substring(msg.entities[0].length + 1);
-            console.log(text);
-            bot.getChat(text).then(res => {
-                reply(msg, String(res.id));
-                //bot.sendMessage(msg.chat.id, String(res.id), {reply_to_message_id: msg.message_id});
-                console.log(res);
-                console.log("logged");
-            });
-        } else if(msg.chat.type === "private" && msg.text.startsWith('\/start getpics ')){
+        if ( msg.chat.type === "private" && msg.text.startsWith('\/start getpics ') ){
             let args = msg.text.split(" ");
             if (args.length === 3) {
                 let username = args[2];
