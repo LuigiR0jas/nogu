@@ -12,6 +12,7 @@ const fs = require('fs'),
     translate = require('node-google-translate-skidz'),
     cheerio = require('cheerio'),
     phantom = require('phantom'),
+    rp = require('request-promise'),
 //Twitter module
     Twitter = require('twitter'),
     tuser = new Twitter({
@@ -107,9 +108,88 @@ function getId(msg) {
     });
 }
 
-bot.onText(/^\/revy(?:@\w+)$/, msg=>{
+bot.onText(/^\/pickupline(@\w+)?$/, msg=>{
+    request.get('http://www.pickuplinegen.com/', (err, res, html)=>{
+        let $ = cheerio.load(html);
+        let text = $('#content').text();
+        bot.sendMessage(msg.chat.id, text);
+        if(err){
+            bot.sendMessage(msg.chat.id, "There was an error retrieving the information you requested");
+        }
+    })
+});
+
+bot.onText(/^\/piropo(@\w+)?$/, msg=> {
+    request.post('http://www.tuclubsocial.com/getPiropo.php', (err, res, html)=>{
+        bot.sendMessage(msg.chat.id, html);
+            if(err){
+                bot.sendMessage(msg.chat.id, "There was an error retrieving the information you requested");
+            }
+    })
+});
+
+bot.onText(/^\/revy(?:@\w+)?$/, msg=>{
   bot.sendSticker(msg.chat.id, "BQADAQADDwgAAsWGLA7ugW0snffLNwI");
-})
+});
+
+bot.onText(/^\/wik (\w{2})(\w{2}) (.+)/, (msg,match)=>{
+    const langA = match[1],
+          langB = match[2],
+          query = match[3],
+          opts = {
+            uri: `https://${langA}.wikipedia.org/w/api.php?action=query&titles=${query}&prop=langlinks&lllimit=500&format=json`
+        };
+    rp.get(opts).then(res=>{
+        const obj = JSON.parse(res);
+        const targetName = obj.query.pages[Object.keys(obj.query.pages)[0]].langlinks[obj.query.pages[Object.keys(obj.query.pages)[0]].langlinks.findIndex(x=> x.lang===langB)]['*']
+        const text = `_${langB} title:_   ${targetName}`
+        const keyboard = {
+            inline_keyboard: [[
+                {
+                    text: "Desktop link",
+                    url: encodeURI(`https:\/\/${langB}.wikipedia.org\/wiki\/${targetName}`)
+                },
+                {
+                    text: "Mobile link",
+                    url: encodeURI(`https://${langB}.m.wikipedia.org/wiki/${targetName}`)
+                }
+            ]]
+        }
+        bot.sendMessage(msg.chat.id, text, {
+            parse_mode: "Markdown",
+            reply_to_message_id: msg.message_id,
+            reply_markup: keyboard
+        });
+        console.log(keyboard.inline_keyboard[0][0]);
+    })
+});
+
+bot.on('message', msg=>{
+    if (msg.entities && msg.entities[0].type === "bot_command") {
+        let text;
+        if ( msg.chat.type === "private" && msg.text.startsWith('\/start getpics ') ){
+            let args = msg.text.split(" ");
+            if (args.length === 3) {
+                let username = args[2];
+                bot.getChat(username).then(res=> {
+                    console.log(res);
+                    getPics(String(res.id)).then(pics=> {
+                        console.log("pics are" + pics.join(" "));
+                        pics.forEach(x=>{
+                            bot.sendPhoto(msg.chat.id, x);
+                        })
+                    })
+                })
+            }
+        } else if (msg.chat.type !== "private" && msg.text.startsWith("\/getpics ")) {
+            let username = msg.text.substring(msg.entities[0].length + 1);
+            bot.sendMessage(msg.chat.id, `[click here](https:\/\/telegram.me\/${global.me.username}?start=getpics%20${username})`, {
+                parse_mode: "Markdown",
+                disable_web_page_preview: true,
+                reply_to_message_id: msg.message_id});
+        }
+    }
+});
 
 function botAPI (...args) { //method, object, cb
     const methodName = args.shift(),
@@ -147,33 +227,6 @@ function getPics(userId){
         }
     });
 }
-
-bot.on('message', msg=>{
-    if (msg.entities && msg.entities[0].type === "bot_command") {
-        let text;
-        if ( msg.chat.type === "private" && msg.text.startsWith('\/start getpics ') ){
-            let args = msg.text.split(" ");
-            if (args.length === 3) {
-                let username = args[2];
-                bot.getChat(username).then(res=> {
-                    console.log(res);
-                    getPics(String(res.id)).then(pics=> {
-                        console.log("pics are" + pics.join(" "));
-                        pics.forEach(x=>{
-                            bot.sendPhoto(msg.chat.id, x);
-                        })
-                    })
-                })
-            }
-        } else if (msg.chat.type !== "private" && msg.text.startsWith("\/getpics ")) {
-            let username = msg.text.substring(msg.entities[0].length + 1);
-            bot.sendMessage(msg.chat.id, `[click here](https:\/\/telegram.me\/${global.me.username}?start=getpics%20${username})`, {
-                parse_mode: "Markdown",
-                disable_web_page_preview: true,
-                reply_to_message_id: msg.message_id});
-        }
-    }
-});
 
 // Get tags when # then save
 function addTags1(msg) {
@@ -415,11 +468,10 @@ function tra2(msg) {
 
 // Help
 function help(msg) {
-    bot.sendMessage(msg.chat.id, "\/help - Sends this message.\r\n\r\n\/repite <text> - Repeats the text\r\n\r\n\/dolar - Checks the current exchange value of the Dollar\r\n\/euro - Checks the current exchange value of the Euro\r\n\r\n\/doge - Sends random doge from 12 doges\r\n\r\n\/trans <l1l2> <texto> - Translates the text from language 1 (l1) to language 2 (l2) on Google Translate. If you want to translate with \/trans, You must place the two letters that represent each language in this format: l1l2 (for example, to translate from Spanish to English, write esen)\r\n\r\nExamples of combinations:\r\nende = English to German\r\neozh = Esperanto to Chinese\r\nsves = Swedish to Spanish\r\nptit = Portuguese to Italian\r\n\r\nUsage example:\r\n\/trans enes Languages are cool.\r\n\r\nBot made by @Bestulo. If you notice a mistake or an error, or a way to break it, please notice me so that I can fix it.");
+    bot.sendMessage(msg.chat.id, "\/help - Sends this message.\r\n\r\n\/dolar - Checks the current exchange value of the Dollar\r\n\/euro - Checks the current exchange value of the Euro\r\n\r\n\/doge - Sends random doge from 12 doges\r\n\r\n\/trans <l1l2> <texto> - Translates the text from language 1 (l1) to language 2 (l2) on Google Translate. If you want to translate with \/trans, You must place the two letters that represent each language in this format: l1l2 (for example, to translate from Spanish to English, write esen)\r\n\r\nExamples of combinations:\r\nende = English to German\r\neozh = Esperanto to Chinese\r\nsves = Swedish to Spanish\r\nptit = Portuguese to Italian\r\n\r\nUsage example:\r\n\/trans enes Languages are cool.\r\n\r\nBot made by @Bestulo. If you notice a mistake or an error, or a way to break it, please notice me so that I can fix it.");
 }
 
 //Dollar & Euro stuff
-
 function currency(msg){
     tuser.get('users/show', {screen_name:'DolarToday'},(err, req)=>{
         let currency, value, bio = req.description;
@@ -532,97 +584,89 @@ function kick(msg) {
         let user1, user2, state;
         user1 = msg.from.id;
         user2 = msg.reply_to_message.from.id;
-        if (res.indexOf(user1) === -1)
-            state = 0;
-        else if (res.indexOf(user1) !== -1 && res.indexOf(user2) === -1)
-            state = 1;
-        else if (res.indexOf(user1) !== -1 && res.indexOf(user2) !== -1 && String(user1) !== String(user2))
-            state = 2;
-        else if (res.indexOf(user1) !== -1 && String(user1) === String(user2))
-            state = 3;
-        switch (user2) {
-          case 174110471:
-              reply(msg, "Vesti is unkickable and unbannable. Armor plot, fagets");
-              break;
-          case 236107528:
-              reply(msg, "Aldo was hugging a doge and didn't notice he was kicked, so he stayed instead");
-              break;
-          case 92204718:
-              reply(msg, "Due to his unending depression, PTJ has become immune to my banhammer powers");
-              break;
-          case 237799109:
-              reply(msg, "I refuse to harm my creator.");
-              break;
-          case 238569200:
-              reply(msg, "Has he even showered? _You_ kick him, I'm not touching him.");
-              break;
-          case 74277920:
-              reply(msg, "He has my family! _Please_ don't make me do this!");
-              break;
-          case 229219920:
-              reply(msg, "I would kick myself, but I don't want to. :)")
-              break;
-          default:
-              switch (state) {
-                  case 3:
-                      reply(msg, "_You cannot kick/ban yourself._");
-                      break;
-                  case 2:
-                      reply(msg, "_You cannot kick/ban another admin._");
-                      break;
-                  case 1:
-                      const user = msg.reply_to_message.from;
-                      botAPI("kickChatMember", {chat_id: msg.chat.id, user_id: user.id}, result => {
-                          if (result.ok === false) {
-                              bot.sendMessage(msg.chat.id, "I cannot kick that member.");
-                          } else {
-                              let text;
-                              if (msg.text.startsWith("\/kick")) {
-                                  botAPI("unbanChatMember", {chat_id: msg.chat.id, user_id: user.id}, () => {
-                                      if (user.username !== undefined) {
-                                          text = "I have kicked `" + user.first_name + "`" + " ( @" + user.username + " )";
-                                      } else {
-                                          text = "I have kicked `" + user.first_name + "`";
-                                      }
-                                      reply(msg, text);
-                                  });
-                              } else {
-                                  if (user.username !== undefined) {
-                                      text = "I have banned `" + user.first_name + "`" + " ( @" + user.username + " )";
-                                  } else {
-                                      text = "I have banned `" + user.first_name + "`";
-                                  }
-                                  report(msg, text);
-                              }
-                          }
-                      });
-                      break;
-                  case 0:
-                      break;
-                  default:
-                      console.log('unexpected switch default');
-              }
-              break;
+        // (only valid choice) if asker is admin and receiver is not
+        if (res.indexOf(user1) !== -1 && res.indexOf(user2) === -1) {
+          // Immunity check
+            switch (user2) {
+                case 174110471:
+                    reply(msg, "Vesti is unkickable and unbannable. Armor plot, fagets");
+                    break;
+                case 236107528:
+                    reply(msg, "Aldo was hugging a doge and didn't notice he was kicked, so he stayed instead");
+                    break;
+                case 92204718:
+                    reply(msg, "Due to his unending depression, PTJ has become immune to my banhammer powers");
+                    break;
+                case 237799109:
+                    reply(msg, "I refuse to harm my creator.");
+                    break;
+                case 238569200:
+                    reply(msg, "Has he even showered? _You_ kick him, I'm not touching him.");
+                    break;
+                case 74277920:
+                    reply(msg, "He has my family! _Please_ don't make me do this!");
+                    break;
+                case 229219920:
+                    reply(msg, "I would kick myself, but I don't want to. :)");
+                    break;
+                case 212770216:
+                    reply(msg, "That's racist and classist. I'm refuse to take part in this.");
+                    break;
+                default:
+                    removeUser(msg);
+            }
+        }
+        // If asker and receiver are both admins
+        else if (res.indexOf(user1) !== -1 && res.indexOf(user2) !== -1 && String(user1) !== String(user2)) {
+            reply(msg, "_You cannot kick/ban another admin._");
+        }
+        // If asker is admin and is also receiver
+        else if (res.indexOf(user1) !== -1 && String(user1) === String(user2)) {
+            reply(msg, "_You cannot kick/ban yourself._");
+        // No else for asker not admin ( res.indexOf(user1) === -1 )
+        }
+    });
+};
+
+function removeUser(msg) {
+    const user = msg.reply_to_message.from;
+    botAPI("kickChatMember", {chat_id: msg.chat.id, user_id: user.id}, result => {
+        if (result.ok === false) {
+            bot.sendMessage(msg.chat.id, "I cannot kick that member.");
+        } else {
+            let text;
+            if (msg.text.startsWith("\/kick")) {
+                botAPI("unbanChatMember", {chat_id: msg.chat.id, user_id: user.id}, () => {
+                    if (user.username !== undefined) {
+                        text = "I have kicked `" + user.first_name + "`" + " ( @" + user.username + " )";
+                    } else {
+                        text = "I have kicked `" + user.first_name + "`";
+                    }
+                    reply(msg, text);
+                });
+            } else {
+                if (user.username !== undefined) {
+                    text = "I have banned `" + user.first_name + "`" + " ( @" + user.username + " )";
+                } else {
+                    text = "I have banned `" + user.first_name + "`";
+                }
+                report(msg, text);
+            }
         }
     });
 }
 
-bot.onText(/^\/pickupline(@\w+)?$/, msg=>{
-    request.get('http://www.pickuplinegen.com/', (err, res, html)=>{
-        let $ = cheerio.load(html);
-        let text = $('#content').text();
-        bot.sendMessage(msg.chat.id, text);
-        if(err){
-            bot.sendMessage(msg.chat.id, "There was an error retrieving the information you requested");
+bot.onText(/^\/widetext(?:@\w+)? ([\s\S]+)/, (msg, match)=>{
+    let sentArr = match[1].split("");
+    let wideArr = ["ａ", "ｂ", "ｃ", "ｄ", "ｅ", "ｆ", "ｇ", "ｈ", "ｉ", "ｊ", "ｋ", "ｌ", "ｍ", "ｎ", "ｏ", "ｐ", "ｑ", "ｒ", "ｓ", "ｔ", "ｕ", "ｖ", "ｗ", "ｘ", "ｙ", "ｚ", "Ａ", "Ｂ", "Ｃ", "Ｄ", "Ｅ", "Ｆ", "Ｇ", "Ｈ", "Ｉ", "Ｊ", "Ｋ", "Ｌ", "Ｍ", "Ｎ", "Ｏ", "Ｐ", "Ｑ", "Ｒ", "Ｓ", "Ｔ", "Ｕ", "Ｖ", "Ｗ", "Ｘ", "Ｙ", "Ｚ", "１", "２", "３", "４", "５", "６", "７", "８", "９", "０", "＇", "？", "＊", "－", "／", "＋", "＃", "＄", "％", "＆", "（", "）", "＝", "｜", "＊", "［", "］", "｛", "｝", "；", "：", "，", "．", "－", "＿", "＜", "＞"]
+    let alphArr = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "'", "?", "*", "-", "/", "+", "#", "$", "%", "&", "(", ")", "=", "|", "*", "[", "]", "{", "}", ";", ":", ",", ".", "-", "_", "<", ">"]
+    let newSentence = "";
+    for ( let i = 0 ; i < sentArr.length ; i++ ) {
+        if ( alphArr.indexOf(sentArr[i]) !== -1 ) {
+            newSentence += wideArr[ alphArr.indexOf(sentArr[i]) ];
+        } else {
+            newSentence += sentArr[i];
         }
-    })
-});
-
-bot.onText(/^\/piropo(@\w+)?$/, msg=> {
-    request.post('http://www.tuclubsocial.com/getPiropo.php', (err, res, html)=>{
-        bot.sendMessage(msg.chat.id, html);
-            if(err){
-                bot.sendMessage(msg.chat.id, "There was an error retrieving the information you requested");
-            }
-    })
+    }
+    reply(msg, newSentence);
 });
