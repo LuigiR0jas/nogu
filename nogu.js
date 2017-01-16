@@ -22,7 +22,8 @@ const fs = require('fs'),
         access_token_secret: vars.access_token_secret
     }),
 // Other modules
-    _ = require('underscore');
+    _ = require('underscore'),
+    dl = require('image-downloader');
 
 console.log('bot on');
 
@@ -48,6 +49,40 @@ bot.on('message', msg => {
     shove(msg);
     if(msg.text && msg.text.match(/#([^\s]+)/g) && !msg.text.startsWith("\/") && msg.reply_to_message && msg.reply_to_message.sticker){
         addTags1(msg);}
+});
+
+bot.onText(/^\/mtg(?:@\w+)? (.+)/, (msg, match)=>{
+    let url = 'http://gatherer.wizards.com/Pages/Search/Default.aspx?name='
+    let searchArr = match[1].split(" ");
+    searchArr.forEach(x=>{
+        url += "+[" + x + "]"
+    })
+    rp(url).then(res=>{
+        let $ = cheerio.load(res);
+        console.log($('#ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl00_listRepeater_ctl00_cardImage').attr('src'));
+        return $('#ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl00_listRepeater_ctl00_cardImage').attr('src');
+    }).then(img=>{
+        if (img === undefined){
+            bot.sendMessage(msg.chat.id, "_Nogu could not find that card_ 😔", {parse_mode: "markdown"});
+        } else {
+            let imgId = img.match(/(?:seid=)([0-9]+)/)[1];
+            let imgUrl = `http://gatherer.wizards.com/Handlers/Image.ashx?multiverseid=${imgId}&type=card`
+            let opts = {
+                url: imgUrl,
+                dest: 'downloads/magicCard.jpg',
+                done: (err, filename, image)=>{
+                    if(err){
+                        bot.sendMessage(msg.chat.id, JSON.stringify(err));
+                    } else {
+                        bot.sendPhoto(msg.chat.id, filename).catch((err)=>{
+                            bot.sendMessage(msg.chat.id, "I downloaded the image, but an error occurred while trying to send it.");
+                        });
+                    }
+                }
+            }
+            dl(opts);
+        }
+    })
 });
 
 function reply(msg, text){
