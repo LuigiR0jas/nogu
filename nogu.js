@@ -22,38 +22,7 @@ const fs = require('fs'),
         access_token_secret: vars.access_token_secret
     }),
 // Other modules
-    _ = require('underscore'),
-// DB modules
-    uri = 'mongodb://localhost/telegram',
-    mongoose = require('mongoose');
-
-mongoose.Promise = global.Promise;
-mongoose.connect(uri);
-
-// Mongoose requirements
-const Schema = mongoose.Schema,
-    stickerSchema = Schema({
-        stickerKeyword: String,
-        stickerId: String,
-        userId: Number,
-        userName: String,
-        tags: Array
-    }),
-    Sticker = mongoose.model('Sticker', stickerSchema),
-
-    sonnetSchema = Schema({
-        sonnetId: Number,
-        sonnet: String
-    }),
-    Sonnet = mongoose.model('Sonnet', sonnetSchema);
-
-bot.getMe().then(res=>{
-    global.me = {
-        id: res.id,
-        name: res.first_name,
-        username: res.username
-    }
-});
+    _ = require('underscore');
 
 console.log('bot on');
 
@@ -72,51 +41,13 @@ bot.onText(/^\//, msg => {
         tra2(msg);
     else if(msg.text.match(/^\/trans|^\/trans@/))
         tra1(msg);
-    else if(msg.text.match(/^\/sonnet\s[0-9]+$/))
-        sonnet(msg);
     else if(msg.text.match(/^\/dolar|^\/dollar|^\/euro/))
         currency(msg);
-    else if(msg.text.match(/^\/addtags(?=\s)|\/addtags@\w+/) && msg.reply_to_message && msg.reply_to_message.sticker && msg.entities && msg.entities[0].type === "bot_command")
-        addTags2(msg);
 });
 bot.on('message', msg => {
     shove(msg);
     if(msg.text && msg.text.match(/#([^\s]+)/g) && !msg.text.startsWith("\/") && msg.reply_to_message && msg.reply_to_message.sticker){
         addTags1(msg);}
-});
-
-bot.onText(/^\/mtg(?:@\w+)? (.+)/, (msg, match)=>{
-    let url = 'http://gatherer.wizards.com/Pages/Search/Default.aspx?name='
-    let searchArr = match[1].split(" ");
-    searchArr.forEach(x=>{
-        url += "+[" + x + "]"
-    })
-    rp(url).then(res=>{
-        let $ = cheerio.load(res);
-        console.log($('#ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl00_listRepeater_ctl00_cardImage').attr('src'));
-        return $('#ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl00_listRepeater_ctl00_cardImage').attr('src');
-    }).then(img=>{
-        if (img === undefined){
-            bot.sendMessage(msg.chat.id, "_Nogu could not find that card_ 😔", {parse_mode: "markdown"});
-        } else {
-            let imgId = img.match(/(?:seid=)([0-9]+)/)[1];
-            let imgUrl = `http://gatherer.wizards.com/Handlers/Image.ashx?multiverseid=${imgId}&type=card`
-            let opts = {
-                url: imgUrl,
-                dest: 'downloads/magicCard.jpg',
-                done: (err, filename, image)=>{
-                    if(err){
-                        bot.sendMessage(msg.chat.id, JSON.stringify(err));
-                    } else {
-                        bot.sendPhoto(msg.chat.id, filename).catch((err)=>{
-                            bot.sendMessage(msg.chat.id, "I downloaded the image, but an error occurred while trying to send it.");
-                        });
-                    }
-                }
-            }
-            dl(opts);
-        }
-    })
 });
 
 function reply(msg, text){
@@ -258,175 +189,6 @@ function getPics(userId){
             return photos;
         } else {
             return photos;
-        }
-    });
-}
-
-// Get tags when # then save
-function addTags1(msg) {
-    let hashtags, tags, nottags;
-    hashtags = msg.text.match(/#([^\s]+)/g);
-    tags = [];
-    nottags = [];
-    hashtags.forEach(function (x) {
-        if (x.substring(1).indexOf("#") === -1) {
-            tags.push(x.substring(1));
-        } else if (x.substring(1).indexOf("#") !== -1) {
-            nottags.push(x.substring(1));
-        }
-    });
-    tags = _.uniq(tags);
-    tagSaver(msg, tags, nottags)
-}
-
-// Get tags on command then save
-function addTags2(msg) {
-    let command, args, hashtags, tags, nottags;
-    command = msg.text.substring(msg.text.search("\/"), msg.text.search(" "));
-    args = msg.text.substring(command.length + 1);
-    hashtags = args.match(/[^\s]+/g);
-    tags = [];
-    nottags = [];
-    hashtags.forEach(function (x) {
-        if (x.startsWith("#")) {
-            if (x.substring(1).indexOf("#") === -1) {
-                tags.push(x.substring(1));
-            } else if (x.substring(1).indexOf("#") !== -1) {
-                nottags.push(x.substring(1));
-            }
-        } else if (x.indexOf("#") === -1) {
-            tags.push(x);
-        }
-    });
-    tags = _.uniq(tags);
-    tagSaver(msg, tags, nottags)
-}
-
-// Tag saver
-const tagSaver = function(msg, tags, nottags) {
-    Sticker.find({tags: {$in: tags}, stickerId: msg.reply_to_message.sticker.file_id}, function (err, result) {
-        let text = '';
-        if (err) {
-            console.log(err);
-        } else {
-            let duplicates, dupes, taggies, noties;
-            if (result[0] !== undefined) {
-                duplicates = _.intersection(tags, result[0].tags);
-                tags = _.difference(tags, result[0].tags);
-                dupes = duplicates.join(", ");
-                taggies = tags.join(", ");
-                noties = nottags.join(", ");
-                if (tags.length !== 0) {
-                    text += "I'm adding the following tags: " + taggies + "\nI found some duplicates: " + dupes;
-                } else {
-                    text = "All tags already associated with the sticker, no changes made.";
-                }
-                if (nottags.length !== 0) {
-                    text += "\nInvalid tags were found and will not be added: " + noties;
-                }
-                bot.sendMessage(msg.chat.id, text);
-            } else {
-                if (tags.length !== 0) {
-                    taggies = tags.join(", ");
-                    text += "I'm adding the following tags: " + taggies;
-                }
-                if (nottags.length !== 0) {
-                    noties = nottags.join(", ");
-                    text += "\nInvalid tags were found and will not be added: " + noties;
-                }
-                bot.sendMessage(msg.chat.id, text);
-            }
-            if (tags.length !== 0) {
-                Sticker.update({stickerId: msg.reply_to_message.sticker.file_id}, {$push: {tags: {$each: tags}}}, {
-                    upsert: true,
-                    new: true
-                }, function (err) {
-                    if (err) {
-                        console.log(err);
-                    }
-                });
-            }
-        }
-    });
-};
-
-// Get #tags inline and show
-bot.on('inline_query', function (msg) {
-    let hashtags, tags = [], nottags = [];
-    hashtags = msg.query.split(' ');
-    hashtags.forEach(function (x) {
-        if (x.startsWith("#")) {
-            if (x.substring(1).indexOf("#") === -1) {
-                tags.push(x.substring(1));
-            } else if (x.substring(1).indexOf("#") !== -1) {
-                nottags.push(x.substring(1));
-            }
-        } else if (x.indexOf("#") === -1) {
-            tags.push(x);
-        }
-    });
-    Sticker.find({tags: {$in: tags}}, function (err, result) {
-        if (err) {
-            console.log(err);
-        } else {
-            let stickerIds = [], finalResults = [];
-            for (let i = 0;i<result.length;i++){
-                if (tags.length <= _.intersection(result[i].tags, tags).length) {
-                    finalResults.push(result[i]);
-                }
-            }
-            result = finalResults;
-            for (let i = 0; i < result.length; i++) {
-                stickerIds.push(result[i].stickerId);
-            }
-            if (err) {
-                console.log(err);
-                bot.answerInlineQuery(msg.query.id, [{
-                    type: 'article',
-                    id: '400',
-                    title: 'ERROR',
-                    input_message_content: {message_text: 'ERROR! NOGU BE DEAD! k maybe not'}
-                }]);
-            } else if (result[0] !== undefined) {
-                if (result[0].stickerId !== undefined) {
-                    let resultArr, uniqResults, myArr;
-                    resultArr = [];
-                    for (let i = 0; i < result.length; i++) {
-                        resultArr.push(result[i].stickerId);
-                    }
-                    uniqResults = _.uniq(resultArr);
-                    myArr = [];
-                    for (let i = 0; i < uniqResults.length; i++) {
-                        myArr.push({
-                            type: 'sticker',
-                            id: String(i),
-                            sticker_file_id: uniqResults[i],
-                            cache_time: 30
-                        });
-                    }
-                    bot.answerInlineQuery(msg.id, myArr);
-                }
-            }
-        }
-    });
-});
-
-//Sonnet puller
-function sonnet(msg) {
-    console.log('Action log: Sent a sonnet');
-    let text = msg.text.substring(msg.entities[0].length + 1);
-    Sonnet.find({sonnetId: text}, (err, result) => {
-        if (err) {
-            console.log(err);
-            bot.sendMessage(msg.chat.id, 'ERROR! NOGU BE DEAD! or maybe not')
-        } else if (result[0] !== undefined) {
-            if (result[0].sonnetId !== undefined) {
-                bot.sendMessage(msg.chat.id, result[0].sonnet)
-            } else {
-                bot.sendMessage(msg.chat.id, 'Nogu cannot find that sonnet.')
-            }
-        } else {
-            bot.sendMessage(msg.chat.id, 'Nogu cannot find that sonnet.')
         }
     });
 }
