@@ -59,16 +59,12 @@ bot.on('message', msg=>{
 bot.onText(/^\/mcc(?:@\w+)? (.+)/, (msg, match)=>{
     let searchArr = match[1].split(" ");
     let url = 'http://magiccards.info/query?q=' + searchArr.join('+');
-    let q = searchArr.join('+')
-    let form = {q: searchArr.join('+')}
-    let flen = qs.stringify(form).length;
     let opts = {
         headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.110 Safari/537.36',
             'Content-Type' : 'application/x-www-form-urlencoded'
         }
     }
-    console.log(url);
     rp.get(url, opts).then(html=>{
         let $ = cheerio.load(html);
         return $('table').eq(3).find('img').first().attr('src');
@@ -102,7 +98,6 @@ function getAdmins(chatId) {
 }
 function getId(msg) {
     let text = msg.text.substring(msg.entities[0].length + 1);
-    console.log(text);
     bot.getChat(text).then(res => {
         reply(msg, String(res.id));
     });
@@ -160,7 +155,6 @@ bot.onText(/^\/wik (\w{2})(\w{2}) (.+)/, (msg,match)=>{
             reply_to_message_id: msg.message_id,
             reply_markup: keyboard
         });
-        console.log(keyboard.inline_keyboard[0][0]);
     })
 });
 
@@ -172,9 +166,7 @@ bot.on('message', msg=>{
             if (args.length === 3) {
                 let username = args[2];
                 bot.getChat(username).then(res=> {
-                    console.log(res);
                     getPics(String(res.id)).then(pics=> {
-                        console.log("pics are" + pics.join(" "));
                         pics.forEach(x=>{
                             bot.sendPhoto(msg.chat.id, x);
                         })
