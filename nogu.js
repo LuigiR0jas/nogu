@@ -51,38 +51,38 @@ bot.on('message', msg => {
         addTags1(msg);}
 });
 
-bot.onText(/^\/mtg(?:@\w+)? (.+)/, (msg, match)=>{
-    let url = 'http://gatherer.wizards.com/Pages/Search/Default.aspx?name='
+bot.on('message', msg=>{
+    msg.reply = (...params)=>{
+        bot.sendMessage(msg.chat.id, ...params)
+    }
+})
+bot.onText(/^\/mcc(?:@\w+)? (.+)/, (msg, match)=>{
     let searchArr = match[1].split(" ");
-    searchArr.forEach(x=>{
-        url += "+[" + x + "]"
-    })
-    rp(url).then(res=>{
-        let $ = cheerio.load(res);
-        console.log($('#ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl00_listRepeater_ctl00_cardImage').attr('src'));
-        return $('#ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl00_listRepeater_ctl00_cardImage').attr('src');
-    }).then(img=>{
-        if (img === undefined){
-            bot.sendMessage(msg.chat.id, "_Nogu could not find that card_ 😔", {parse_mode: "markdown"});
-        } else {
-            let imgId = img.match(/(?:seid=)([0-9]+)/)[1];
-            let imgUrl = `http://gatherer.wizards.com/Handlers/Image.ashx?multiverseid=${imgId}&type=card`
-            let opts = {
-                url: imgUrl,
-                dest: 'downloads/magicCard.jpg',
-                done: (err, filename, image)=>{
-                    if(err){
-                        bot.sendMessage(msg.chat.id, JSON.stringify(err));
-                    } else {
-                        bot.sendPhoto(msg.chat.id, filename).catch((err)=>{
-                            bot.sendMessage(msg.chat.id, "I downloaded the image, but an error occurred while trying to send it.");
-                        });
-                    }
-                }
-            }
-            dl(opts);
+    let url = 'http://magiccards.info/query?q=' + searchArr.join('+');
+    let q = searchArr.join('+')
+    let form = {q: searchArr.join('+')}
+    let flen = qs.stringify(form).length;
+    let opts = {
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.110 Safari/537.36',
+            'Content-Type' : 'application/x-www-form-urlencoded'
         }
+    }
+    console.log(url);
+    rp.get(url, opts).then(html=>{
+        let $ = cheerio.load(html);
+        return $('table').eq(3).find('img').first().attr('src');
     })
+    .then(imgUrl=>{
+        if (imgUrl === undefined) {
+            msg.reply("_Nogu could not find that card_  😔", {parse_mode: "markdown"});
+        } else {
+            bot.sendPhoto(msg.chat.id, imgUrl).catch((err)=>{
+                console.log(err);
+                bot.sendMessage(msg.chat.id, "I downloaded the image, but an error occurred while trying to send it.");
+            });
+        }
+    });
 });
 
 function reply(msg, text){
