@@ -56,7 +56,7 @@ bot.on('message', msg=>{
         bot.sendMessage(msg.chat.id, ...params)
     }
 })
-bot.onText(/^\/mcc(?:@\w+)? (.+)/, (msg, match)=>{
+bot.onText(/^\/mtg(?:@\w+)? (.+)/, (msg, match)=>{
     let searchArr = match[1].split(" ");
     let url = 'http://magiccards.info/query?q=' + searchArr.join('+');
     let opts = {
