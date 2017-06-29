@@ -1,0 +1,23 @@
+{
+  "dicom": {
+    "superior": "2640",
+    "inferior": "2010",
+    "mercy": 0.94
+  },
+  "tags": {
+    "taggers": [
+      237799109,
+      77820497
+    ],
+    "tagged": [
+      "@D3iXe",
+      "@QniON",
+      "@AlmasAnath",
+      "@Bestulo",
+      "@LaytonStone",
+      "@nobjorkinlif",
+      "@Samuel_angel",
+      "@TebanR"
+    ]
+  }
+}
